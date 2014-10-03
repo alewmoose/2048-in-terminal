@@ -1,22 +1,16 @@
 #ifndef DRAW_H
 #define DRAW_H
 
-#define SW 10   // square width and height
-#define SH 5
+#define TILE_WIDTH  10
+#define TILE_HEIGHT 5
 
-#define VL  ACS_VLINE
-#define HL  ACS_HLINE
-#define ULC ACS_ULCORNER
-#define URC ACS_URCORNER
-#define LLC ACS_LLCORNER
-#define LRC ACS_LRCORNER
+typedef int board_t[4][4];
 
-void init_win(WINDOW **win, WINDOW **score_win);
-void draw_field(WINDOW *win, int field[5][5], int gameover);
-void draw_score(WINDOW *score_win, int points, int score, int max_score);
-void animove(WINDOW *win, int field[5][5], int moves[5][5], int dir);
-void sleep_sec(double sec);
-void prepare_screen(void);
+void setup_screen(void);
+int  init_win    (WINDOW **board_win, WINDOW **score_win);
+void draw_board  (WINDOW *board_win, board_t board, int is_gameover);
+void draw_score  (WINDOW *score_win, int score, int points, int max_score);
+void draw_slide  (WINDOW *win, board_t board, board_t moves, int dir);
 
 
 #endif
