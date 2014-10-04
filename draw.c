@@ -6,13 +6,26 @@
 #include "draw.h"
 
 
-
-static const char *centered_nums[] = { "        ",
+static const char *tile_str[] = { "        ",
 	"   2    ", "   4    ", "   8    ", "   16   ",
 	"   32   ", "   64   ", "  128   ", "  256   ",			    
 	"  512   ", "  1024  ", "  2048  ", "  4096  ",			    
 	"  8192  ", " 16384  ", " 32768  ", " 65536  ",			    
 	" 131072 "
+};
+
+static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),      // emtpy tile
+	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),  // 2 4 8 16
+	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),                 // 32 64 128  
+	
+	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD,              // 256 512
+	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD,              // 1024 2048
+	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD,              // 4096 8192
+	COLOR_PAIR(7) | A_BOLD,                                      // 16384
+
+	COLOR_PAIR(1) | A_BOLD,                     // 32768
+	COLOR_PAIR(2) | A_BOLD,                     // 65536
+	COLOR_PAIR(3) | A_BOLD,                     // 131072
 };
 
 static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
@@ -67,35 +80,10 @@ void setup_screen(void)
 	init_pair(7, COLOR_RED,     COLOR_BLACK);
 }
 
-static void square_prop(int num, int *centered, int *color)
-{
-	switch (num) {
-		case 2:      *centered = 1;  *color = 1; break;
-		case 4:      *centered = 2;  *color = 2; break;
-		case 8:      *centered = 3;  *color = 3; break;
-		case 16:     *centered = 4;  *color = 4; break;
-		case 32:     *centered = 5;  *color = 5; break;
-		case 64:     *centered = 6;  *color = 6; break;
-		case 128:    *centered = 7;  *color = 7; break;
-		case 256:    *centered = 8;  *color = 1; break;
-		case 512:    *centered = 9;  *color = 2; break;
-		case 1024:   *centered = 10; *color = 3; break;
-		case 2048:   *centered = 11; *color = 4; break;
-		case 4096:   *centered = 12; *color = 5; break;
-		case 8192:   *centered = 14; *color = 6; break;
-		case 16384:  *centered = 15; *color = 7; break;
-		case 32768:  *centered = 16; *color = 1; break;
-		case 65536:  *centered = 17; *color = 2; break;
-		case 131072: *centered = 17; *color = 3; break;
-		default:     *centered = 0;  *color = 0;
-	}	
-}
-
 
 
 static void draw_tile(WINDOW *board_win, int top, int left, int val)
 {
-//	return;
 	int right  = left + TILE_WIDTH  - 1;
 	int bottom = top  + TILE_HEIGHT - 1;
 
@@ -107,11 +95,7 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 		return;
 	}
 
-	int color, centered_i;
-	square_prop(val, &centered_i, &color);
-	wattron(board_win, COLOR_PAIR(color));
-	if (val >= 256)   wattron(board_win, A_BOLD);
-	if (val >= 32768) wattron(board_win, A_UNDERLINE); // it's possible :)
+	wattrset(board_win, tile_attr[val]);
 
 	// draw top line
 	mvwaddch(board_win, top, left, ACS_ULCORNER);
@@ -121,10 +105,9 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 	for (int y = top+1; y < bottom; y++) {
 		mvwaddch(board_win, y, left, ACS_VLINE);
 		if (y == (top + bottom) / 2) {  //central line with number
-			const char *num_str = centered_nums[centered_i];
-			wprintw(board_win, num_str);
+			wprintw(board_win, tile_str[val]);
 		} else {
-			wprintw(board_win, "        "); // 8 spaces
+			wprintw(board_win, tile_str[0]); // 8 spaces
 		}
 		waddch(board_win, ACS_VLINE); 
 	}
@@ -133,9 +116,6 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 	mvwaddch(board_win, bottom, left, ACS_LLCORNER);
 	for (int x = left+1; x < right; x++) waddch(board_win, ACS_HLINE);
 	waddch(board_win, ACS_LRCORNER);
-
-	if (val >= 256)   wattroff(board_win, A_BOLD);
-	if (val >= 32768) wattroff(board_win, A_UNDERLINE);
 }
 
 
@@ -220,8 +200,7 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 									.val = board[y][x],
 									.tick = 6 / moves[y][x]};
 				tiles_n++;
-				// remove sliding tiles from the board
-				board[y][x] = 0;
+				board[y][x] = 0; // remove sliding tiles from the board
 			}
 		}
 	}

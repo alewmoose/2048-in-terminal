@@ -88,7 +88,7 @@ int main(void)
             board_add_tile(board, 0);
             draw_board(board_win, board, 0);
 			wrefresh(board_win);
-        } else if (!board_can_slide(board)) { //didn't move, check if game's over
+        } else if (!board_can_slide(board)) { //didn't slide, check if game's over
 			draw_board(board_win, board, 1);
 			draw_score(score_win, score, 0, max_score);
 			wrefresh(board_win);

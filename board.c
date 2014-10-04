@@ -3,12 +3,19 @@
 #include <stdlib.h>
 #include "board.h"
 
-void board_add_tile(board_t board, int tile_val)
+static const int tile_num[] = { 0,
+	2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048,
+	4096, 8192, 16384, 32768, 65536, 131072
+};
+                            	
+
+void board_add_tile(board_t board, int only2)
 {
-	unsigned emptyx[16], emptyy[16], empty_n = 0;
-	int x, y;
+	int emptyx[16], emptyy[16], empty_n = 0;
+	int x, y, val;
  // 12.5% chance of getting '4'
-	if (tile_val == 0) tile_val = (rand() % 8 == 1) ? 4 : 2;
+	if (only2) val = 1;
+	else val = (rand() % 8 == 1) ? 2 : 1;
 
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
@@ -24,15 +31,15 @@ void board_add_tile(board_t board, int tile_val)
 		int r = rand() % empty_n;
 		x = emptyx[r];
 		y = emptyy[r];
-		board[y][x] = tile_val;
+		board[y][x] = val;
 	}
 }
 
 void board_start(board_t board)
 {
     memset(board, 0, 16*sizeof(int));
-	board_add_tile(board, 2);
-	board_add_tile(board, 2);
+	board_add_tile(board, 1); // add only 2's on start
+	board_add_tile(board, 1);
 }
 
 static void rotate_l(board_t board)
@@ -89,8 +96,8 @@ static int slide_left(board_t board, board_t moves)
 				for (next = x+1; next < 4 && row[next] == 0; next++);
 				if (next < 4 && row[x] == row[next]) {
 					if (!slided) slided = 1;
-					row[x] *= 2;
-					points += row[x];
+					row[x]++;
+					points += tile_num[row[x]];
 					row[next] = 0;
 					moves[y][next] = next - x;
 				}
@@ -180,10 +187,12 @@ int load_game(board_t board, int *score, int *max_score)
     FILE *fin;
     if (!(fin = fopen(save_file, "r"))) return 0;
    
-	fscanf(fin, "%d%d", score, max_score);
+	if (fscanf(fin, "%d%d", score, max_score) != 2)
+		return 0;
 	for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {
-            fscanf(fin, "%d", &board[y][x]);
+            if (fscanf(fin, "%d", &board[y][x]) == 0)
+				return 0;
         }
     }
     fclose(fin);
