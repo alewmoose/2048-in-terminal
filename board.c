@@ -13,7 +13,7 @@ void board_add_tile(board_t board, int only2)
 {
 	int emptyx[16], emptyy[16], empty_n = 0;
 	int x, y, val;
- // 12.5% chance of getting '4'
+// 12.5% chance of getting '4'
 	if (only2) val = 1;
 	else val = (rand() % 8 == 1) ? 2 : 1;
 
@@ -37,7 +37,7 @@ void board_add_tile(board_t board, int only2)
 
 void board_start(board_t board)
 {
-    memset(board, 0, 16*sizeof(int));
+	memset(board, 0, 16*sizeof(int));
 	board_add_tile(board, 1); // add only 2's on start
 	board_add_tile(board, 1);
 }
@@ -160,32 +160,32 @@ static int get_home(void)
 	if (!home || strlen(home) > 249) return 0;
 
 	strcpy(save_file, home);
-    strcat(save_file, "/.2048"); 
-    return 1;
+	strcat(save_file, "/.2048"); 
+	return 1;
 }
 
 int save_game(board_t board, int score, int max_score)
 {
-    FILE *fout;
-    if (!(fout = fopen(save_file, "w"))) return 0;
+	FILE *fout;
+	if (!(fout = fopen(save_file, "w"))) return 0;
 
 	fprintf(fout, "%d\n%d\n", score, max_score);
-    for (int y = 0; y < 4; y++) {
-        for (int x = 0; x < 4; x++) {
-            fprintf(fout, "%d ", board[y][x]);
-        }
-        fputs("\n", fout);
-    }
-    fclose(fout);
-    return 1;
+	for (int y = 0; y < 4; y++) {
+		for (int x = 0; x < 4; x++) {
+			fprintf(fout, "%d ", board[y][x]);
+		}
+		fputs("\n", fout);
+	}
+	fclose(fout);
+	return 1;
 }
 
 int load_game(board_t board, int *score, int *max_score)
 {
-    if (!get_home()) return 0;
-    
-    FILE *fin;
-    if (!(fin = fopen(save_file, "r"))) return 0;
+	if (!get_home()) return 0;
+
+	FILE *fin;
+	if (!(fin = fopen(save_file, "r"))) return 0;
 	 
 	if (fscanf(fin, "%d%d", score, max_score) != 2)
 		return 0;
@@ -195,15 +195,15 @@ int load_game(board_t board, int *score, int *max_score)
 		return 0;
 
 	for (int y = 0; y < 4; y++) {
-        for (int x = 0; x < 4; x++) {
+		for (int x = 0; x < 4; x++) {
 			int num;
-            if (fscanf(fin, "%d", &num) == 0)
+			if (fscanf(fin, "%d", &num) == 0)
 				return 0;
 			if (num < 0 || num > 17) return 0;
 			board[y][x] = num;
-        }
-    }
+		}
+	}
 
-    fclose(fin);
-    return 1;
+	fclose(fin);
+	return 1;
 } 

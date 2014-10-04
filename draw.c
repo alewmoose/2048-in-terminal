@@ -67,9 +67,9 @@ void setup_screen(void)
 {
 	initscr();
 	start_color();
-    noecho(); 
-    cbreak();
-    curs_set(0);
+	noecho(); 
+	cbreak();
+	curs_set(0);
 
 	init_pair(1, COLOR_WHITE,   COLOR_BLACK);
 	init_pair(2, COLOR_YELLOW,  COLOR_BLACK);
@@ -87,7 +87,7 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 	int right  = left + TILE_WIDTH  - 1;
 	int bottom = top  + TILE_HEIGHT - 1;
 
-              // draw empty square
+	// draw empty square
 	if (val == 0) {
 		for (int y = top; y <= bottom; y++) {
 			mvwprintw(board_win, y, left, "          "); // 10 spaces
