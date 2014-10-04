@@ -7,7 +7,7 @@ static const int tile_num[] = { 0,
 	2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048,
 	4096, 8192, 16384, 32768, 65536, 131072
 };
-                            	
+								
 
 void board_add_tile(board_t board, int only2)
 {
@@ -186,15 +186,24 @@ int load_game(board_t board, int *score, int *max_score)
     
     FILE *fin;
     if (!(fin = fopen(save_file, "r"))) return 0;
-   
+	 
 	if (fscanf(fin, "%d%d", score, max_score) != 2)
 		return 0;
+	int max_possible = 3932156;
+	if (*score > *max_score || *score < 0 || *max_score < 0 ||
+		*max_score > max_possible) 
+		return 0;
+
 	for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {
-            if (fscanf(fin, "%d", &board[y][x]) == 0)
+			int num;
+            if (fscanf(fin, "%d", &num) == 0)
 				return 0;
+			if (num < 0 || num > 17) return 0;
+			board[y][x] = num;
         }
     }
+
     fclose(fin);
     return 1;
 } 

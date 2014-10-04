@@ -8,9 +8,9 @@
 
 static const char *tile_str[] = { "        ",
 	"   2    ", "   4    ", "   8    ", "   16   ",
-	"   32   ", "   64   ", "  128   ", "  256   ",			    
-	"  512   ", "  1024  ", "  2048  ", "  4096  ",			    
-	"  8192  ", " 16384  ", " 32768  ", " 65536  ",			    
+	"   32   ", "   64   ", "  128   ", "  256   ",				
+	"  512   ", "  1024  ", "  2048  ", "  4096  ",				
+	"  8192  ", " 16384  ", " 32768  ", " 65536  ",				
 	" 131072 "
 };
 
@@ -49,15 +49,15 @@ int init_win(WINDOW **board_win, WINDOW **score_win)
 	int board_win_left   = (scr_width - board_win_width)   / 2 - 5;
 
 	*board_win = newwin(board_win_height, board_win_width,
-	                    board_win_top, board_win_left);
+						board_win_top, board_win_left);
 
 	wborder(*board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-	         ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+			 ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 
 	keypad(*board_win, TRUE);
 
 	*score_win = newwin(board_win_height - 2, 13, board_win_top+1,
-	                    board_win_left + board_win_width + 1);
+						board_win_left + board_win_width + 1);
 	
 	if (!board_win || !score_win) return 0;
 	return 1;
