@@ -8,14 +8,21 @@ static const int tile_num[] = { 0,
 	4096, 8192, 16384, 32768, 65536, 131072
 };
 								
+inline void board_copy(board_t dest, board_t source)
+{
+	memcpy(dest, source, 16*sizeof(int));
+}
 
 void board_add_tile(board_t board, int only2)
 {
 	int emptyx[16], emptyy[16], empty_n = 0;
 	int x, y, val;
 // 12.5% chance of getting '4'
-	if (only2) val = 1;
-	else val = (rand() % 8 == 1) ? 2 : 1;
+	if (only2) {
+		val = 1;
+	} else {
+		val = (rand() % 8 == 1) ? 2 : 1;
+	}
 
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {

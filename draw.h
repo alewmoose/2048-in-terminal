@@ -11,6 +11,8 @@ int  init_win    (WINDOW **board_win, WINDOW **score_win);
 void draw_board  (WINDOW *board_win, board_t board, int is_gameover);
 void draw_score  (WINDOW *score_win, int score, int points, int max_score);
 void draw_slide  (WINDOW *win, board_t board, board_t moves, int dir);
+void refresh_board(WINDOW *board_win, board_t board, int is_gameover);
+void refresh_score(WINDOW *score_win, int score, int points, int max_score);
 
 
 #endif

@@ -4,7 +4,7 @@
 
 typedef int board_t[4][4];
 
-#define board_copy(dest, source) (memcpy((dest), (source), 16*sizeof(int)))
+void board_copy(board_t dest, board_t source);
 
 void board_start    (board_t board);
 void board_add_tile (board_t board, int only2);

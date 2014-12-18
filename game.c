@@ -26,10 +26,8 @@ int main(void)
 		exit(1);
 	}
 
-	draw_board(board_win, board, 0);
-	draw_score(score_win, score, 0, max_score);	
-	wrefresh(board_win);
-	wrefresh(score_win);
+	refresh_board(board_win, board, gameover);
+	refresh_score(score_win, score, 0, max_score);
 
 	int ch;
 	while ((ch = wgetch(board_win)) != 'q' && ch != 'Q') {  // q to quit
@@ -46,10 +44,8 @@ int main(void)
 			case 'r': case 'R':               // start new game
 				gameover = score = 0;	
 				board_start(board);
-				draw_board(board_win, board, 0);
-				draw_score(score_win, score, 0, max_score);
-				wrefresh(board_win);
-				wrefresh(score_win);
+				refresh_board(board_win, board, gameover);
+				refresh_score(score_win, score, 0, max_score);
 				continue;
 				break;
 
@@ -58,10 +54,8 @@ int main(void)
 					endwin();
 					exit(1);
 				}
-				draw_board(board_win, board, gameover);
-				draw_score(score_win, score, points, max_score);
-				wrefresh(board_win);
-				wrefresh(score_win);
+				refresh_board(board_win, board, gameover);
+				refresh_score(score_win, score, points, max_score);
 				continue;
 				break;
 
@@ -72,28 +66,23 @@ int main(void)
 
 		points = board_slide(board, new_board, moves, dir);
 		if (points >= 0) {
-			draw_score(score_win, score, points, max_score);
-			wrefresh(score_win);
+			refresh_score(score_win, score, points, max_score);
 			draw_slide(board_win, board, moves, dir);
 			board_copy(board, new_board);
 
 			score += points;
-			if (score > max_score) max_score = score;
-			draw_board(board_win, board, 0);
-			draw_score(score_win, score, points, max_score);
-			wrefresh(board_win);
-			wrefresh(score_win);
+			if (score > max_score)
+				max_score = score;
+			refresh_board(board_win, board, gameover);
+			refresh_score(score_win, score, points, max_score);
 			
 			nanosleep(&addsquare_time, NULL);
 			board_add_tile(board, 0);
-			draw_board(board_win, board, 0);
-			wrefresh(board_win);
+			refresh_board(board_win, board, gameover);
 		} else if (!board_can_slide(board)) { //didn't slide, check if game's over
-			draw_board(board_win, board, 1);
-			draw_score(score_win, score, 0, max_score);
-			wrefresh(board_win);
-			wrefresh(score_win);
 			gameover = 1;
+			refresh_board(board_win, board, gameover);
+			refresh_score(score_win, score, points, max_score);
 		}
 		flushinp();
 	}

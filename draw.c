@@ -162,6 +162,18 @@ void draw_score(WINDOW *score_win, int score, int points, int max_score)
 	mvwaddch(score_win, 16, 1, 'Q');
 }
 
+inline void refresh_board(WINDOW *board_win, board_t board, int is_gameover)
+{
+	draw_board(board_win, board, is_gameover);
+	wrefresh(board_win);
+}
+
+inline void refresh_score(WINDOW *score_win, int score, int points, int max_score)
+{
+	draw_score(score_win, score, points, max_score);
+	wrefresh(score_win);
+}
+
 typedef struct { // sliding tile
 	int x, y; // coords
 	int tick; // move every tick
@@ -169,7 +181,7 @@ typedef struct { // sliding tile
 } tile_t;
 
 /* what tile to draw first?
-   if sliding left, draw tiles from left to right,
+   if sliding left, draw sliding tiles from left to right,
    same for other directions */
 static int sort_left(const void *l, const void *r)
 {
@@ -196,11 +208,14 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
 			if (moves[y][x]) {
-				tiles[tiles_n] = (tile_t){.x = x*TILE_WIDTH + 1, .y = y*TILE_HEIGHT + 1,
-									.val = board[y][x],
-									.tick = 6 / moves[y][x]};
-				tiles_n++;
+				tile_t tile;
+				tile.x = x * TILE_WIDTH + 1; // convert board position to window coords
+				tile.y = y * TILE_HEIGHT + 1;
+				tile.val = board[y][x];
+				tile.tick = 6 / moves[y][x];
+
 				board[y][x] = 0; // remove sliding tiles from the board
+				tiles[tiles_n++] = tile;
 			}
 		}
 	}
@@ -214,7 +229,7 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 		case 'd': sort = sort_down;  my =  1; break;
 		default : exit(1); break;
 	}
-	qsort(tiles, tiles_n, sizeof(tile_t), sort);
+	qsort(tiles, tiles_n, sizeof(tile_t), sort); //sort sliding tiles according to direction
 	
 	nanosleep(&tick_time, NULL);
 	/* sliding continues for 30 ticks,
