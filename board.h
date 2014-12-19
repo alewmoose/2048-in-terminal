@@ -1,8 +1,10 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-
+#ifndef BOARD_T
+#define BOARD_T
 typedef int board_t[4][4];
+#endif
 
 void board_copy(board_t dest, board_t source);
 

@@ -7,8 +7,10 @@
 #define WIN_OK 1
 #define WIN_TOO_SMALL 0
 
-
+#ifndef BOARD_T
+#define BOARD_T
 typedef int board_t[4][4];
+#endif
 
 void setup_screen(void);
 int  init_win    (WINDOW **board_win, WINDOW **score_win);
