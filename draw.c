@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 #include "draw.h"
 
 
@@ -32,7 +33,7 @@ static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
 static const struct timespec end_move_time = {.tv_sec = 0, .tv_nsec = 6000000};
 
 
-int init_win(WINDOW **board_win, WINDOW **score_win)
+bool init_win(WINDOW **board_win, WINDOW **score_win)
 {
 	if (*board_win) delwin(*board_win);
 	if (*score_win) delwin(*score_win);
@@ -131,7 +132,8 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 
 	// draw top line
 	mvwaddch(board_win, top, left, ACS_ULCORNER);
-	for (int x = left+1; x < right; x++) waddch(board_win, ACS_HLINE);
+	for (int x = left+1; x < right; x++)
+		waddch(board_win, ACS_HLINE);
 	waddch(board_win, ACS_URCORNER);
 
 	for (int y = top+1; y < bottom; y++) {
@@ -152,7 +154,7 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 
 
 
-void draw_board(WINDOW *board_win, board_t board, int is_gameover)
+void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
 {
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
@@ -194,7 +196,7 @@ void draw_score(WINDOW *score_win, int score, int points, int max_score)
 	mvwaddch(score_win, 16, 1, 'Q');
 }
 
-inline void refresh_board(WINDOW *board_win, board_t board, int is_gameover)
+inline void refresh_board(WINDOW *board_win, board_t board, bool is_gameover)
 {
 	draw_board(board_win, board, is_gameover);
 	wrefresh(board_win);

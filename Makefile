@@ -12,7 +12,6 @@ board.o: board.c board.h
 draw.o: draw.c draw.h
 	cc -c draw.c $(CFLAGS)
 
-
 clean:
 	rm -f 2048 *.o
 

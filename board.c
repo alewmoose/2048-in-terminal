@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "board.h"
 
 static const int tile_num[] = { 0,
@@ -13,7 +14,7 @@ inline void board_copy(board_t dest, board_t source)
 	memcpy(dest, source, 16*sizeof(int));
 }
 
-void board_add_tile(board_t board, int only2)
+void board_add_tile(board_t board, bool only2)
 {
 	int emptyx[16], emptyy[16], empty_n = 0;
 	int x, y, val;
@@ -45,8 +46,8 @@ void board_add_tile(board_t board, int only2)
 void board_start(board_t board)
 {
 	memset(board, 0, 16*sizeof(int));
-	board_add_tile(board, 1); // add only 2's on start
-	board_add_tile(board, 1);
+	board_add_tile(board, true); // add only 2's on start
+	board_add_tile(board, true);
 }
 
 static void rotate_l(board_t board)
@@ -81,7 +82,7 @@ static void rotate_2(board_t board)
 
 static int slide_left(board_t board, board_t moves)
 {
-	/* returns points or -1 if didn't slide */
+	/* returns points or NO_SLIDE if didn't slide */
 	memset(moves, 0, 16*sizeof(int));
 	int points = 0, slided = 0;
 
@@ -112,21 +113,22 @@ static int slide_left(board_t board, board_t moves)
 		}
 	}
 
-	return slided ? points : -1;
+	return slided ? points : NO_SLIDE;
 }
 
 int board_slide(board_t board, board_t new_board, board_t moves,  int dir)
 {
-	/* returns points or -1 if didn't slide, stores moves for animation */
+	/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
 	board_copy(new_board, board);
 
 	// rotate field
-	if (dir == 'r')      rotate_2(new_board);
+	if      (dir == 'r') rotate_2(new_board);
 	else if (dir == 'u') rotate_l(new_board);
 	else if (dir == 'd') rotate_r(new_board);
 
 	int points = slide_left(new_board, moves);
-	if (points == -1) return -1;
+	if (points == NO_SLIDE)
+		goto ext;
 
 	// rotate back
 	if (dir == 'r') {
@@ -139,21 +141,21 @@ int board_slide(board_t board, board_t new_board, board_t moves,  int dir)
 		rotate_l(new_board);
 		rotate_l(moves);
 	}
-
+ext:
 	return points;
 }
 
 
-int board_can_slide(board_t board)
+bool board_can_slide(board_t board)
 {
 	board_t b1, b2; // dummies
 	if (board_slide(board, b1, b2, 'l') >= 0 ||
-		board_slide(board, b1, b2, 'r') >= 0 ||
-		board_slide(board, b1, b2, 'u') >= 0 ||
-		board_slide(board, b1, b2, 'd') >= 0) {
-		return 1;
+	    board_slide(board, b1, b2, 'r') >= 0 ||
+	    board_slide(board, b1, b2, 'u') >= 0 ||
+	    board_slide(board, b1, b2, 'd') >= 0) {
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 
@@ -161,20 +163,20 @@ int board_can_slide(board_t board)
 
 static char save_file[256];
 
-static int get_home(void)
+static bool get_home(void)
 {
 	char *home = getenv("HOME");
-	if (!home || strlen(home) > 249) return 0;
+	if (!home || strlen(home) > 249) return false;
 
 	strcpy(save_file, home);
 	strcat(save_file, "/.2048"); 
-	return 1;
+	return true;
 }
 
-int save_game(board_t board, int score, int max_score)
+bool save_game(board_t board, int score, int max_score)
 {
 	FILE *fout;
-	if (!(fout = fopen(save_file, "w"))) return 0;
+	if (!(fout = fopen(save_file, "w"))) return false;
 
 	fprintf(fout, "%d\n%d\n", score, max_score);
 	for (int y = 0; y < 4; y++) {
@@ -184,33 +186,35 @@ int save_game(board_t board, int score, int max_score)
 		fputs("\n", fout);
 	}
 	fclose(fout);
-	return 1;
+	return true;
 }
 
-int load_game(board_t board, int *score, int *max_score)
+bool load_game(board_t board, int *score, int *max_score)
 {
-	if (!get_home()) return 0;
-
 	FILE *fin;
-	if (!(fin = fopen(save_file, "r"))) return 0;
 
-	if (fscanf(fin, "%d%d", score, max_score) != 2)
-		return 0;
+	if (!get_home() || !(fin = fopen(save_file, "r")))
+		return false;
+
 	int max_possible = 3932156;
-	if (*score > *max_score || *score < 0 || *max_score < 0 ||
-		*max_score > max_possible)
-		return 0;
+	if (fscanf(fin, "%d%d", score, max_score) != 2 ||
+	    *score > *max_score || *score < 0 || *max_score < 0 ||
+	    *max_score > max_possible)
+		goto err;
 
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
 			int num;
-			if (fscanf(fin, "%d", &num) == 0)
-				return 0;
-			if (num < 0 || num > 17) return 0;
+			if (fscanf(fin, "%d", &num) == 0 ||
+			    num < 0 || num > 17) {
+				goto err;
+			}
 			board[y][x] = num;
 		}
 	}
-
 	fclose(fin);
-	return 1;
+	return true;
+err:
+	fclose(fin);
+	return false;
 }
