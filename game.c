@@ -16,7 +16,9 @@ int main(void)
 	bool terminal_too_small = false;
 
 	board_t board;
-	int score = 0, max_score = 0, gameover = false;
+	int score = 0, max_score = 0;
+	dir_t gameover = false;
+
 	if (!load_game(board, &score, &max_score)) {
 		board_start(board);
 		score = max_score = 0;

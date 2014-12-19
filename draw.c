@@ -46,10 +46,10 @@ bool init_win(WINDOW **board_win, WINDOW **score_win)
 	int scr_width, scr_height;
 	getmaxyx(stdscr, scr_height, scr_width);
 
-	int board_win_width  = TILE_WIDTH  * 4 + 2;
+	int board_win_width  = TILE_WIDTH  * BOARD_SIZE + 2;
 	int score_win_width  = 13;
 
-	int board_win_height = TILE_HEIGHT * 4 + 2;
+	int board_win_height = TILE_HEIGHT * BOARD_SIZE + 2;
 	int score_win_height = board_win_height - 2;
 
 	int board_win_top    = (scr_height - board_win_height) / 2;
@@ -160,8 +160,8 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 
 static void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
 {
-	for (int y = 0; y < 4; y++) {
-		for (int x = 0; x < 4; x++) {
+	for (int y = 0; y < BOARD_SIZE; y++) {
+		for (int x = 0; x < BOARD_SIZE; x++) {
 			int xc = TILE_WIDTH  * x + 1;
 			int yc = TILE_HEIGHT * y + 1;
 			draw_tile(board_win, yc, xc, board[y][x]);
@@ -169,7 +169,7 @@ static void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
 	}
 	if (is_gameover) {
 		wattron(board_win, A_BOLD | COLOR_PAIR(1));
-		mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*4 - 8) / 2,
+		mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
 		          "GAME OVER");
 		wattroff(board_win, A_BOLD);
 	}
@@ -242,11 +242,11 @@ static int sort_down(const void *l, const void *r)
 
 void draw_slide(WINDOW *board_win, board_t board, board_t moves, dir_t dir)
 {
-	tile_t tiles[16]; // sliding tiles
+	tile_t tiles[BOARD_TILES]; // sliding tiles
 	int tiles_n = 0;
 
-	for (int y = 0; y < 4; y++) {
-		for (int x = 0; x < 4; x++) {
+	for (int y = 0; y < BOARD_SIZE; y++) {
+		for (int x = 0; x < BOARD_SIZE; x++) {
 			if (moves[y][x]) {
 				tile_t tile;
 				// convert board position to window coords
