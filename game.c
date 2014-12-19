@@ -63,9 +63,7 @@ int main(void)
 				refresh_score(score_win, score, points, max_score);
 				continue;
 				break;
-			default:
-				logit("other key");
-				continue;
+			default: continue;
 		}
 
 		if (gameover) continue;
