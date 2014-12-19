@@ -6,21 +6,6 @@
 #include "draw.h"
 #include "board.h"
 
-void logit(char *msg)
-{
-	static FILE *lf = NULL;
-	if (!lf) {
-		lf = fopen("log", "w");
-		if (!lf) {
-			endwin();
-			exit(1);
-		}
-	}
-	time_t t = time(NULL);
-	fprintf(lf, "%s\t%s\n", ctime(&t), msg);
-}
-
-
 int main(void)
 {
 	setup_screen();
