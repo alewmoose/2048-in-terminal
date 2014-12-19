@@ -8,16 +8,16 @@
 
 static const char *tile_str[] = { "        ",
 	"   2    ", "   4    ", "   8    ", "   16   ",
-	"   32   ", "   64   ", "  128   ", "  256   ",				
-	"  512   ", "  1024  ", "  2048  ", "  4096  ",				
-	"  8192  ", " 16384  ", " 32768  ", " 65536  ",				
+	"   32   ", "   64   ", "  128   ", "  256   ",
+	"  512   ", "  1024  ", "  2048  ", "  4096  ",
+	"  8192  ", " 16384  ", " 32768  ", " 65536  ",
 	" 131072 "
 };
 
 static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),      // emtpy tile
 	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),  // 2 4 8 16
-	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),                 // 32 64 128  
-	
+	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),                 // 32 64 128
+
 	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD,              // 256 512
 	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD,              // 1024 2048
 	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD,              // 4096 8192
@@ -32,44 +32,65 @@ static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
 static const struct timespec end_move_time = {.tv_sec = 0, .tv_nsec = 6000000};
 
 
-
 int init_win(WINDOW **board_win, WINDOW **score_win)
 {
 	if (*board_win) delwin(*board_win);
 	if (*score_win) delwin(*score_win);
+	*board_win = NULL;
+	*score_win = NULL;
+
 	clear();
 	refresh();
 
 	int scr_width, scr_height;
 	getmaxyx(stdscr, scr_height, scr_width);
 
-	int board_win_width  = TILE_WIDTH*4  + 2;
-	int board_win_height = TILE_HEIGHT*4 + 2;
+	int board_win_width  = TILE_WIDTH  * 4 + 2;
+	int score_win_width  = 13;
+
+	int board_win_height = TILE_HEIGHT * 4 + 2;
+	int score_win_height = board_win_height - 2;
+
 	int board_win_top    = (scr_height - board_win_height) / 2;
-	int board_win_left   = (scr_width - board_win_width)   / 2 - 5;
+	int score_win_top    = board_win_top + 1;
+
+	int board_win_left;
+	if (board_win_width + score_win_width < scr_width) {
+		board_win_left = (scr_width - board_win_width - score_win_width) / 2;
+	} else {
+		board_win_left = 0;
+	}
+	int score_win_left   = board_win_left + board_win_width + 1;
+
+
+	if (board_win_height > scr_height || board_win_width > scr_width) {
+		return WIN_TOO_SMALL;
+	}
 
 	*board_win = newwin(board_win_height, board_win_width,
-						board_win_top, board_win_left);
-
+	                    board_win_top, board_win_left);
 	wborder(*board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-			 ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+	        ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 
-	keypad(*board_win, TRUE);
 
-	*score_win = newwin(board_win_height - 2, 13, board_win_top+1,
-						board_win_left + board_win_width + 1);
-	
-	if (!board_win || !score_win) return 0;
-	return 1;
+	*score_win = newwin(score_win_height, score_win_width,
+	                    score_win_top, score_win_left);
+
+	if (!board_win || !score_win) { //nothing i can do about it
+		endwin();
+		exit(1);
+	}
+	return WIN_OK;
 }
 
 void setup_screen(void)
 {
 	initscr();
 	start_color();
-	noecho(); 
+	noecho();
 	cbreak();
 	curs_set(0);
+	keypad(stdscr, true);
 
 	init_pair(1, COLOR_WHITE,   COLOR_BLACK);
 	init_pair(2, COLOR_YELLOW,  COLOR_BLACK);
@@ -80,7 +101,18 @@ void setup_screen(void)
 	init_pair(7, COLOR_RED,     COLOR_BLACK);
 }
 
-
+void print_too_small(void)
+{
+	int width, height;
+	char *msg = "TERMINAL TOO SMALL";
+	int mlen = strlen(msg);
+	getmaxyx(stdscr, height, width);
+	int x = (width - mlen) / 2;
+	x = x >= 0 ? x : 0;
+	int y = height / 2;
+	mvprintw(y, x, msg);
+	refresh();
+}
 
 static void draw_tile(WINDOW *board_win, int top, int left, int val)
 {
@@ -109,7 +141,7 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 		} else {
 			wprintw(board_win, tile_str[0]); // 8 spaces
 		}
-		waddch(board_win, ACS_VLINE); 
+		waddch(board_win, ACS_VLINE);
 	}
 
 	// draw bottom line
@@ -130,7 +162,7 @@ void draw_board(WINDOW *board_win, board_t board, int is_gameover)
 		}
 	}
 	if (is_gameover) {
-		wattron(board_win, A_BOLD | COLOR_PAIR(1));	
+		wattron(board_win, A_BOLD | COLOR_PAIR(1));
 		mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*4 - 8) / 2,  "GAME OVER");
 		wattroff(board_win, A_BOLD);
 	}
@@ -157,7 +189,7 @@ void draw_score(WINDOW *score_win, int score, int points, int max_score)
 
 	wattron(score_win, COLOR_PAIR(3));
 	mvwaddch(score_win, 15, 1, 'R');
-	
+
 	wattron(score_win, COLOR_PAIR(7));
 	mvwaddch(score_win, 16, 1, 'Q');
 }
@@ -199,7 +231,7 @@ static int sort_down(const void *l, const void *r)
 {
 	return ((tile_t *)r)->y - ((tile_t *)l)->y;
 }
-				
+
 void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 {
 	tile_t tiles[16]; // sliding tiles
@@ -230,7 +262,7 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 		default : exit(1); break;
 	}
 	qsort(tiles, tiles_n, sizeof(tile_t), sort); //sort sliding tiles according to direction
-	
+
 	nanosleep(&tick_time, NULL);
 	/* sliding continues for 30 ticks,
 	   a tile can move every 1, 2 or 3 ticks */

@@ -6,12 +6,27 @@
 #include "draw.h"
 #include "board.h"
 
+void logit(char *msg)
+{
+	static FILE *lf = NULL;
+	if (!lf) {
+		lf = fopen("log", "w");
+		if (!lf) {
+			endwin();
+			exit(1);
+		}
+	}
+	time_t t = time(NULL);
+	fprintf(lf, "%s\t%s\n", ctime(&t), msg);
+}
+
 
 int main(void)
 {
 	setup_screen();
 	srand(time(NULL));
 	const struct timespec addsquare_time = {.tv_sec = 0, .tv_nsec = 100000000};
+	int terminal_too_small = 0;
 
 	board_t board;
 	int score, max_score, gameover = 0;
@@ -21,16 +36,18 @@ int main(void)
 	}
 
 	WINDOW *board_win = NULL, *score_win = NULL;
-	if (!init_win(&board_win, &score_win)) {
-		endwin();
-		exit(1);
+	if (init_win(&board_win, &score_win) == WIN_TOO_SMALL) {
+		terminal_too_small = 1;
+		print_too_small();
+	} else {
+		refresh_board(board_win, board, gameover);
+		refresh_score(score_win, score, 0, max_score);
 	}
 
-	refresh_board(board_win, board, gameover);
-	refresh_score(score_win, score, 0, max_score);
-
 	int ch;
-	while ((ch = wgetch(board_win)) != 'q' && ch != 'Q') {  // q to quit
+	while ((ch = getch()) != 'q' && ch != 'Q') {  // q to quit
+		if (terminal_too_small && ch != KEY_RESIZE)
+			continue;
 		int dir, points = 0;
 		board_t new_board = {};
 		board_t moves = {};
@@ -42,24 +59,28 @@ int main(void)
 			case KEY_RIGHT: dir = 'r'; break;
 
 			case 'r': case 'R':               // start new game
-				gameover = score = 0;	
+				gameover = score = 0;
 				board_start(board);
 				refresh_board(board_win, board, gameover);
 				refresh_score(score_win, score, 0, max_score);
 				continue;
 				break;
 
-			case KEY_RESIZE:                  // terminal resize	
-				if (!init_win(&board_win, &score_win)) {
-					endwin();
-					exit(1);
+			case KEY_RESIZE:                  // terminal resize
+				if (init_win(&board_win, &score_win) == WIN_TOO_SMALL) {
+					terminal_too_small = 1;
+					print_too_small();
+					continue;
+				} else {
+					terminal_too_small = 0;
 				}
 				refresh_board(board_win, board, gameover);
 				refresh_score(score_win, score, points, max_score);
 				continue;
 				break;
-
-			default: continue; // main loop
+			default:
+				logit("other key");
+				continue;
 		}
 
 		if (gameover) continue;
@@ -68,14 +89,14 @@ int main(void)
 		if (points >= 0) {
 			refresh_score(score_win, score, points, max_score);
 			draw_slide(board_win, board, moves, dir);
-			board_copy(board, new_board);
 
+			board_copy(board, new_board);
 			score += points;
 			if (score > max_score)
 				max_score = score;
 			refresh_board(board_win, board, gameover);
 			refresh_score(score_win, score, points, max_score);
-			
+
 			nanosleep(&addsquare_time, NULL);
 			board_add_tile(board, 0);
 			refresh_board(board_win, board, gameover);
@@ -90,4 +111,4 @@ int main(void)
 	save_game(board, score, max_score);
 	endwin();
 	return 0;
-} 
+}

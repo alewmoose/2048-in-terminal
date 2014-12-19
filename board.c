@@ -7,7 +7,7 @@ static const int tile_num[] = { 0,
 	2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048,
 	4096, 8192, 16384, 32768, 65536, 131072
 };
-								
+
 inline void board_copy(board_t dest, board_t source)
 {
 	memcpy(dest, source, 16*sizeof(int));
@@ -33,7 +33,7 @@ void board_add_tile(board_t board, int only2)
 			}
 		}
 	}
-	
+
 	if (empty_n > 0) {
 		int r = rand() % empty_n;
 		x = emptyx[r];
@@ -127,7 +127,7 @@ int board_slide(board_t board, board_t new_board, board_t moves,  int dir)
 
 	int points = slide_left(new_board, moves);
 	if (points == -1) return -1;
-	
+
 	// rotate back
 	if (dir == 'r') {
 		rotate_2(new_board);
@@ -193,12 +193,12 @@ int load_game(board_t board, int *score, int *max_score)
 
 	FILE *fin;
 	if (!(fin = fopen(save_file, "r"))) return 0;
-	 
+
 	if (fscanf(fin, "%d%d", score, max_score) != 2)
 		return 0;
 	int max_possible = 3932156;
 	if (*score > *max_score || *score < 0 || *max_score < 0 ||
-		*max_score > max_possible) 
+		*max_score > max_possible)
 		return 0;
 
 	for (int y = 0; y < 4; y++) {
@@ -213,4 +213,4 @@ int load_game(board_t board, int *score, int *max_score)
 
 	fclose(fin);
 	return 1;
-} 
+}
