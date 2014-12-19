@@ -15,14 +15,14 @@ static const char *tile_str[] = { "        ",
 	" 131072 "
 };
 
-static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),      // emtpy tile
-	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),  // 2 4 8 16
-	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),                 // 32 64 128
+static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),       // emtpy tile
+	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),// 2 4 8 16
+	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),               // 32 64 128
 
-	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD,              // 256 512
-	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD,              // 1024 2048
-	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD,              // 4096 8192
-	COLOR_PAIR(7) | A_BOLD,                                      // 16384
+	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD,           // 256  512
+	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD,           // 1024 2048
+	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD,           // 4096 8192
+	COLOR_PAIR(7) | A_BOLD,                                   // 16384
 
 	COLOR_PAIR(1) | A_BOLD,                     // 32768
 	COLOR_PAIR(2) | A_BOLD,                     // 65536
@@ -104,9 +104,12 @@ void setup_screen(void)
 
 void print_too_small(void)
 {
+	static const char *msg = "TERMINAL TOO SMALL";
+	static int mlen = 0;
+	if (!mlen)
+		mlen = strlen(msg);
+
 	int width, height;
-	char *msg = "TERMINAL TOO SMALL";
-	int mlen = strlen(msg);
 	getmaxyx(stdscr, height, width);
 	int x = (width - mlen) / 2;
 	x = x >= 0 ? x : 0;
@@ -123,7 +126,8 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 	// draw empty square
 	if (val == 0) {
 		for (int y = top; y <= bottom; y++) {
-			mvwprintw(board_win, y, left, "          "); // 10 spaces
+			// 10 spaces
+			mvwprintw(board_win, y, left, "          ");
 		}
 		return;
 	}
@@ -154,7 +158,7 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 
 
 
-void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
+static void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
 {
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
@@ -165,12 +169,13 @@ void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
 	}
 	if (is_gameover) {
 		wattron(board_win, A_BOLD | COLOR_PAIR(1));
-		mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*4 - 8) / 2,  "GAME OVER");
+		mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*4 - 8) / 2,
+		          "GAME OVER");
 		wattroff(board_win, A_BOLD);
 	}
 }
 
-void draw_score(WINDOW *score_win, int score, int points, int max_score)
+static void draw_score(WINDOW *score_win, int score, int points, int max_score)
 {
 	wattron(score_win, COLOR_PAIR(2));
 	mvwprintw(score_win, 1, 1, "Score");
@@ -202,7 +207,8 @@ inline void refresh_board(WINDOW *board_win, board_t board, bool is_gameover)
 	wrefresh(board_win);
 }
 
-inline void refresh_score(WINDOW *score_win, int score, int points, int max_score)
+inline void refresh_score(WINDOW *score_win, int score,
+                          int points, int max_score)
 {
 	draw_score(score_win, score, points, max_score);
 	wrefresh(score_win);
@@ -234,7 +240,7 @@ static int sort_down(const void *l, const void *r)
 	return ((tile_t *)r)->y - ((tile_t *)l)->y;
 }
 
-void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
+void draw_slide(WINDOW *board_win, board_t board, board_t moves, dir_t dir)
 {
 	tile_t tiles[16]; // sliding tiles
 	int tiles_n = 0;
@@ -243,12 +249,13 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 		for (int x = 0; x < 4; x++) {
 			if (moves[y][x]) {
 				tile_t tile;
-				tile.x = x * TILE_WIDTH + 1; // convert board position to window coords
+				// convert board position to window coords
+				tile.x = x * TILE_WIDTH + 1;
 				tile.y = y * TILE_HEIGHT + 1;
 				tile.val = board[y][x];
 				tile.tick = 6 / moves[y][x];
-
-				board[y][x] = 0; // remove sliding tiles from the board
+				// remove sliding tiles from the board
+				board[y][x] = 0;
 				tiles[tiles_n++] = tile;
 			}
 		}
@@ -257,27 +264,30 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, int dir)
 	int (*sort)(const void*, const void*);
 	int mx = 0, my = 0; //coord modifiers
 	switch (dir) {
-		case 'l': sort = sort_left;  mx = -2; break;
-		case 'r': sort = sort_right; mx =  2; break;
-		case 'u': sort = sort_up;    my = -1; break;
-		case 'd': sort = sort_down;  my =  1; break;
-		default : exit(1); break;
+		case LEFT:  sort = sort_left;  mx = -2; break;
+		case RIGHT: sort = sort_right; mx =  2; break;
+		case UP:    sort = sort_up;    my = -1; break;
+		case DOWN:  sort = sort_down;  my =  1; break;
+		default :   exit(1); break;
 	}
-	qsort(tiles, tiles_n, sizeof(tile_t), sort); //sort sliding tiles according to direction
+	//sort sliding tiles according to direction
+	qsort(tiles, tiles_n, sizeof(tile_t), sort);
 
 	nanosleep(&tick_time, NULL);
 	/* sliding continues for 30 ticks,
 	   a tile can move every 1, 2 or 3 ticks */
 	for (int tick = 1; tick <= 30; tick++) {
 		for (int t = 0; t < tiles_n; t++) {
-			if (tick % tiles[t].tick == 0) { //time to move the tile
+			//time to move the tile
+			if (tick % tiles[t].tick == 0) {
 				tiles[t].x += mx;
 				tiles[t].y += my;
 			}
 		}
 		draw_board(board_win, board, 0); // draw static tiles
 		for (int t = 0; t < tiles_n; t++) { // draw moving tiles
-			draw_tile(board_win, tiles[t].y, tiles[t].x, tiles[t].val);
+			draw_tile(board_win, tiles[t].y,
+			          tiles[t].x, tiles[t].val);
 		}
 		wrefresh(board_win);
 		nanosleep(&tick_time, NULL);

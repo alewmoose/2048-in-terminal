@@ -116,28 +116,28 @@ static int slide_left(board_t board, board_t moves)
 	return slided ? points : NO_SLIDE;
 }
 
-int board_slide(board_t board, board_t new_board, board_t moves,  int dir)
+int board_slide(board_t board, board_t new_board, board_t moves,  dir_t dir)
 {
 	/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
 	board_copy(new_board, board);
 
 	// rotate field
-	if      (dir == 'r') rotate_2(new_board);
-	else if (dir == 'u') rotate_l(new_board);
-	else if (dir == 'd') rotate_r(new_board);
+	if      (dir == RIGHT) rotate_2(new_board);
+	else if (dir == UP)    rotate_l(new_board);
+	else if (dir == DOWN)  rotate_r(new_board);
 
 	int points = slide_left(new_board, moves);
 	if (points == NO_SLIDE)
 		goto ext;
 
 	// rotate back
-	if (dir == 'r') {
+	if (dir == RIGHT) {
 		rotate_2(new_board);
 		rotate_2(moves);
-	} else if (dir == 'u') {
+	} else if (dir == UP) {
 		rotate_r(new_board);
 		rotate_r(moves);
-	} else if (dir == 'd') {
+	} else if (dir == DOWN) {
 		rotate_l(new_board);
 		rotate_l(moves);
 	}
@@ -149,13 +149,13 @@ ext:
 bool board_can_slide(board_t board)
 {
 	board_t b1, b2; // dummies
-	if (board_slide(board, b1, b2, 'l') >= 0 ||
-	    board_slide(board, b1, b2, 'r') >= 0 ||
-	    board_slide(board, b1, b2, 'u') >= 0 ||
-	    board_slide(board, b1, b2, 'd') >= 0) {
-		return true;
+	if (board_slide(board, b1, b2, LEFT)  == NO_SLIDE &&
+	    board_slide(board, b1, b2, RIGHT) == NO_SLIDE &&
+	    board_slide(board, b1, b2, UP)    == NO_SLIDE &&
+	    board_slide(board, b1, b2, DOWN)  == NO_SLIDE) {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 
