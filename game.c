@@ -2,29 +2,52 @@
 #include <ncurses.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <setjmp.h>
 #include <time.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include "draw.h"
 #include "board.h"
 
+static jmp_buf  jmpbuf;
+static sigset_t all_signals;
+
+/* Not sure if it's safe to longjmp from signal handler.
+ * Longjmp's back to main on every signal.
+ */
+static void sig_handler(int __attribute__((unused))sig_no)
+{
+	sigprocmask(SIG_BLOCK, &all_signals, NULL);
+	longjmp(jmpbuf, 1);
+	sig_no = 0;
+}
+
+
 int main(void)
 {
-	setup_screen();
-	srand(time(NULL));
+	WINDOW *board_win = NULL;
+	WINDOW *score_win = NULL;
+	board_t board;
+	/* use volatile to supress compiler warning:
+	 * "variable might be clobbered by longjmp"
+	 */
+	volatile bool terminal_too_small = false;
+	volatile bool gameover = false;
+	int score = 0;
+	int max_score = 0;
 	const struct timespec addsquare_time = {.tv_sec = 0,
 		                                .tv_nsec = 100000000};
-	bool terminal_too_small = false;
+	setup_screen();
+	srand(time(NULL));
 
-	board_t board;
-	int score = 0, max_score = 0;
-	dir_t gameover = false;
 
+	
 	if (!load_game(board, &score, &max_score)) {
 		board_start(board);
 		score = max_score = 0;
 	}
 
-	WINDOW *board_win = NULL, *score_win = NULL;
 	if (init_win(&board_win, &score_win) == WIN_TOO_SMALL) {
 		terminal_too_small = true;
 		print_too_small();
@@ -32,6 +55,19 @@ int main(void)
 		refresh_board(board_win, board, gameover);
 		refresh_score(score_win, score, 0, max_score);
 	}
+
+
+	if (setjmp(jmpbuf) != 0) {
+		/* longjmp from sig_handler */
+		goto sigint;
+	}
+
+	sigfillset(&all_signals);
+	signal(SIGINT,  sig_handler);
+	signal(SIGABRT, sig_handler);
+	signal(SIGTERM, sig_handler);
+
+
 
 	int ch;
 	while ((ch = getch()) != 'q' && ch != 'Q') {  // q to quit
@@ -77,6 +113,9 @@ int main(void)
 
 		if (gameover) continue;
 
+		/* block all signals while operating on board */
+		sigprocmask(SIG_BLOCK, &all_signals, NULL);
+
 		points = board_slide(board, new_board, moves, dir);
 		if (points >= 0) {
 			refresh_score(score_win, score, points, max_score);
@@ -98,9 +137,11 @@ int main(void)
 			refresh_board(board_win, board, gameover);
 			refresh_score(score_win, score, points, max_score);
 		}
+		sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 		flushinp();
 	}
 
+sigint:
 	save_game(board, score, max_score);
 	endwin();
 	return 0;
