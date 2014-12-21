@@ -13,6 +13,9 @@ board.o: board.c board.h common.h
 draw.o: draw.c draw.h common.h
 	cc -c draw.c $(CFLAGS)
 
+install:
+	cp 2048 /usr/local/bin
+
 
 clean:
 	rm -f 2048 *.o
