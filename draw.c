@@ -91,6 +91,7 @@ void setup_screen(void)
 	noecho();
 	cbreak();
 	curs_set(0);
+	set_escdelay(0);
 	keypad(stdscr, true);
 
 	init_pair(1, COLOR_WHITE,   COLOR_BLACK);

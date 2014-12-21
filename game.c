@@ -14,9 +14,10 @@
 #include "board.h"
 #include "save.h"
 
+#define ESC_KEY 27
 static jmp_buf  jmpbuf;
 static sigset_t all_signals;
-char *lfile = "/home/alew/.2048";
+
 
 /* Not sure if it's safe to longjmp from signal handler.
  * Jumps back to main on every signal.
@@ -76,7 +77,7 @@ int main(void)
 
 
 	int ch;
-	while ((ch = getch()) != 'q' && ch != 'Q') {  // q to quit
+	while ((ch = getch()) != 'q' && ch != 'Q' && ch != ESC_KEY) {
 		/* if terminal's too small do nothing
 		   until it's restored */
 		if (terminal_too_small && ch != KEY_RESIZE)
