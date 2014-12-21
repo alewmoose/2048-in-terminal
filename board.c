@@ -89,7 +89,7 @@ static int slide_left(board_t board, board_t moves)
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		int *row = board[y];
 		for (int x = 0; x < BOARD_SIZE-1; x++) {
-			if (row[x] == 0) { // found an empty spot, move next square here
+			if (row[x] == 0) { // found an empty spot, move next tile here
 				int next;
 				for (next = x+1; next < BOARD_SIZE && row[next] == 0; next++);
 				if (next < BOARD_SIZE) {
@@ -99,7 +99,7 @@ static int slide_left(board_t board, board_t moves)
 					moves[y][next] = next - x;
 				}
 			}
-			if (row[x] != 0) { // search for square with same num
+			if (row[x] != 0) { // search for tile with same num
 				int next;
 				for (next = x+1; next < BOARD_SIZE && row[next] == 0; next++);
 				if (next < BOARD_SIZE && row[x] == row[next]) {
@@ -159,66 +159,3 @@ bool board_can_slide(board_t board)
 }
 
 
-// constants needed only for save and load
-#define PATH_LEN 256
-static const int max_possible_score = 3932156;
-static const int max_possible_tile  = 17;
-static const int min_possible_tile  = 0;
-
-static char file_name[PATH_LEN];
-
-static bool get_home(void)
-{
-	char *home = getenv("HOME");
-	if (!home || strlen(home) > PATH_LEN-7) return false;
-
-	strcpy(file_name, home);
-	strcat(file_name, "/.2048"); 
-	return true;
-}
-
-bool save_game(board_t board, int score, int max_score)
-{
-	FILE *fout;
-	if (!(fout = fopen(file_name, "w")))
-		return false;
-
-	fprintf(fout, "%d\n%d\n", score, max_score);
-	for (int y = 0; y < BOARD_SIZE; y++) {
-		for (int x = 0; x < BOARD_SIZE; x++) {
-			fprintf(fout, "%d ", board[y][x]);
-		}
-		fputs("\n", fout);
-	}
-	fclose(fout);
-	return true;
-}
-
-bool load_game(board_t board, int *score, int *max_score)
-{
-	FILE *fin;
-
-	if (!get_home() || !(fin = fopen(file_name, "r")))
-		return false;
-
-	if (fscanf(fin, "%d%d", score, max_score) != 2 ||
-	    *score > *max_score || *score < 0 || *max_score < 0 ||
-	    *max_score > max_possible_score)
-		goto err;
-
-	for (int y = 0; y < BOARD_SIZE; y++) {
-		for (int x = 0; x < BOARD_SIZE; x++) {
-			int num;
-			if (fscanf(fin, "%d", &num) == 0 ||
-			    num < min_possible_tile || num > max_possible_tile) {
-				goto err;
-			}
-			board[y][x] = num;
-		}
-	}
-	fclose(fin);
-	return true;
-err:
-	fclose(fin);
-	return false;
-}

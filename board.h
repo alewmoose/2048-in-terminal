@@ -12,7 +12,4 @@ void board_add_tile (board_t board, bool only2);
 int  board_slide    (board_t board, board_t new_board, board_t moves,  dir_t dir);
 bool board_can_slide(board_t board);
 
-bool save_game(board_t board, int  score, int max_score);
-bool load_game(board_t board, int *score, int *max_score);
-
 #endif

@@ -1,7 +1,7 @@
 CFLAGS=-Wall -Wextra -Wpedantic -std=c99 -g -O2
 
-2048: game.o board.o draw.o
-	cc game.o board.o draw.o -o 2048 $(CFLAGS) -lncurses
+2048: game.o board.o draw.o save.o
+	cc game.o board.o draw.o save.o -o 2048 $(CFLAGS) -lncurses
 
 
 game.o: game.c board.h draw.h common.h
@@ -12,6 +12,9 @@ board.o: board.c board.h common.h
 
 draw.o: draw.c draw.h common.h
 	cc -c draw.c $(CFLAGS)
+
+save.o: save.c save.h common.h
+	cc -c save.c $(CFLAGS)
 
 install:
 	cp 2048 /usr/local/bin

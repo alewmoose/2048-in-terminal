@@ -123,7 +123,7 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 	int right  = left + TILE_WIDTH  - 1;
 	int bottom = top  + TILE_HEIGHT - 1;
 
-	// draw empty square
+	// draw empty tile
 	if (val == 0) {
 		for (int y = top; y <= bottom; y++) {
 			// 10 spaces

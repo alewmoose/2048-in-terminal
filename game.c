@@ -1,16 +1,22 @@
 #define _GNU_SOURCE
 #include <unistd.h>
+#include <sys/file.h>
 #include <ncurses.h>
+
 #include <stdlib.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <time.h>
 #include <stdbool.h>
+#include <errno.h>
+
 #include "draw.h"
 #include "board.h"
+#include "save.h"
 
 static jmp_buf  jmpbuf;
 static sigset_t all_signals;
+char *lfile = "/home/alew/.2048";
 
 /* Not sure if it's safe to longjmp from signal handler.
  * Jumps back to main on every signal.
@@ -20,8 +26,6 @@ static void sig_handler(int __attribute__((unused))sig_no)
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 	longjmp(jmpbuf, 1);
 }
-
-
 
 int main(void)
 {
@@ -40,18 +44,16 @@ int main(void)
 	volatile bool gameover = false;
 	int score = 0;
 	int max_score = 0;
-	const struct timespec addsquare_time = {.tv_sec = 0,
+	const struct timespec addtile_time = {.tv_sec = 0,
 		                                .tv_nsec = 100000000};
-	setup_screen();
 	srand(time(NULL));
-
-
-	
-	if (!load_game(board, &score, &max_score)) {
+	if (load_game(board, &score, &max_score) != 0) {
 		board_start(board);
-		score = max_score = 0;
+		score = 0;
+		max_score = 0;
 	}
 
+	setup_screen();
 	if (init_win(&board_win, &score_win) == WIN_TOO_SMALL) {
 		terminal_too_small = true;
 		print_too_small();
@@ -85,34 +87,32 @@ int main(void)
 		board_t moves     = {{0}};
 
 		switch(ch) {
-			case KEY_UP:    dir = UP;    break; // moving
-			case KEY_DOWN:  dir = DOWN;  break;
-			case KEY_LEFT:  dir = LEFT;  break;
-			case KEY_RIGHT: dir = RIGHT; break;
+		case KEY_UP:    dir = UP;    break; // moving
+		case KEY_DOWN:  dir = DOWN;  break;
+		case KEY_LEFT:  dir = LEFT;  break;
+		case KEY_RIGHT: dir = RIGHT; break;
 
-			case 'r': case 'R':               // start new game
-				score = 0;
-				gameover = false;
-				board_start(board);
-				refresh_board(board_win, board, gameover);
-				refresh_score(score_win, score, 0, max_score);
-				continue; // main loop
-				break; // too feel safe :)
+		case 'r': case 'R':               // start new game
+			score = 0;
+			gameover = false;
+			board_start(board);
+			refresh_board(board_win, board, gameover);
+			refresh_score(score_win, score, 0, max_score);
+			continue; // main loop
 
-			case KEY_RESIZE:                  // terminal resize
-				if (init_win(&board_win, &score_win) ==
-				                            WIN_TOO_SMALL) {
-					terminal_too_small = true;
-					print_too_small();
-					continue;
-				} else {
-					terminal_too_small = false;
-				}
-				refresh_board(board_win, board, gameover);
-				refresh_score(score_win, score, points, max_score);
-				continue;  // main loop
-				break;
-			default: continue; // main loop
+		case KEY_RESIZE:                  // terminal resize
+			if (init_win(&board_win, &score_win) ==
+				                    WIN_TOO_SMALL) {
+				terminal_too_small = true;
+				print_too_small();
+				continue;
+			} else {
+				terminal_too_small = false;
+			}
+			refresh_board(board_win, board, gameover);
+			refresh_score(score_win, score, points, max_score);
+			continue;  // main loop
+		default: continue; // main loop
 		}
 
 		if (gameover) continue;
@@ -132,7 +132,7 @@ int main(void)
 			refresh_board(board_win, board, gameover);
 			refresh_score(score_win, score, points, max_score);
 
-			nanosleep(&addsquare_time, NULL);
+			nanosleep(&addtile_time, NULL);
 			board_add_tile(board, false);
 			refresh_board(board_win, board, gameover);
 		//didn't slide, check if game's over
@@ -147,7 +147,8 @@ int main(void)
 
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 sigint:
-	save_game(board, score, max_score);
 	endwin();
+	if (save_game(board, score, max_score) != 0)
+		fprintf(stderr, "game not saved\n");
 	return 0;
 }
