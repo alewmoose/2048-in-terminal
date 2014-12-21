@@ -1,12 +1,11 @@
 #define _GNU_SOURCE
+#include <unistd.h>
 #include <ncurses.h>
-#include <string.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <time.h>
 #include <stdbool.h>
-#include <stdarg.h>
 #include "draw.h"
 #include "board.h"
 
@@ -14,18 +13,23 @@ static jmp_buf  jmpbuf;
 static sigset_t all_signals;
 
 /* Not sure if it's safe to longjmp from signal handler.
- * Longjmp's back to main on every signal.
+ * Jumps back to main on every signal.
  */
 static void sig_handler(int __attribute__((unused))sig_no)
 {
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 	longjmp(jmpbuf, 1);
-	sig_no = 0;
 }
+
 
 
 int main(void)
 {
+	if (!isatty(fileno(stdout))) {
+		/* not running in terminal */
+		exit(0);
+	}
+
 	WINDOW *board_win = NULL;
 	WINDOW *score_win = NULL;
 	board_t board;
@@ -141,6 +145,7 @@ int main(void)
 		flushinp();
 	}
 
+	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 sigint:
 	save_game(board, score, max_score);
 	endwin();
