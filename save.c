@@ -64,7 +64,7 @@ int load_game(board_t board, int *score, int *max_score)
 	if (get_filename() != 0) {
 		printf("didn't get filename\n");
 		save_mode = NO_SAVE;
-		return 0;
+		return -1;
 	}
 	if (lock_file() != 0) {
 		printf("couldn't lock file\n");
