@@ -15,7 +15,7 @@
 static char filename[PATH_LEN];
 static int  fd;
 
-static enum {NORMAL, NO_SAVE} save_mode = NORMAL;
+bool autosave = true;
 
 
 static int get_filename(void)
@@ -62,13 +62,11 @@ static bool sane(board_t board, int score, int max_score)
 int load_game(board_t board, int *score, int *max_score)
 {
 	if (get_filename() != 0) {
-		printf("didn't get filename\n");
-		save_mode = NO_SAVE;
+		autosave = false;
 		return -1;
 	}
 	if (lock_file() != 0) {
-		printf("couldn't lock file\n");
-		save_mode = NO_SAVE;
+		autosave = false;
 		return -1;
 	}
 	
@@ -85,21 +83,17 @@ int load_game(board_t board, int *score, int *max_score)
 	if (s != sizeof(board_t))
 		return -1;
 
-	if (!sane(board, *score, *max_score)) {
-		printf("save is invalid\n");
+	if (!sane(board, *score, *max_score))
 		return -1;
-	}
 
-	printf("loaded\n");
 	return 0;
 }
 
 int save_game(board_t board, int score, int max_score)
 {
-	if (save_mode == NO_SAVE) {
-		printf("no save\n");
+	if (!autosave)
 		return -1;
-	}
+
 	off_t off;
 	off = lseek(fd, 0, SEEK_SET);
 	if (off == -1)
@@ -107,8 +101,7 @@ int save_game(board_t board, int score, int max_score)
 	write(fd, &score,     sizeof(int));
 	write(fd, &max_score, sizeof(int));
 	write(fd, board,      sizeof(board_t));
-	/* game is saved only once, close file */
+	/* game is saved only once, close the file */
 	close(fd);
-	printf("saved\n");
 	return 0;
 }

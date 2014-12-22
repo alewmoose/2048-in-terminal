@@ -32,15 +32,20 @@ int main(void)
 {
 	if (!isatty(fileno(stdout))) {
 		/* not running in terminal */
-		exit(0);
+		exit(1);
 	}
+
+	sigfillset(&all_signals);
+	signal(SIGINT,  sig_handler);
+	signal(SIGABRT, sig_handler);
+	signal(SIGTERM, sig_handler);
+	signal(SIGHUP,  sig_handler);
 
 	WINDOW *board_win = NULL;
 	WINDOW *score_win = NULL;
 	board_t board;
 	/* use volatile to supress compiler warning:
-	 * "variable might be clobbered by longjmp"
-	 */
+	 * "variable might be clobbered by longjmp" */
 	volatile bool terminal_too_small = false;
 	volatile bool gameover = false;
 	int score = 0;
@@ -48,6 +53,8 @@ int main(void)
 	const struct timespec addtile_time = {.tv_sec = 0,
 		                                .tv_nsec = 100000000};
 	srand(time(NULL));
+
+
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 	if (load_game(board, &score, &max_score) != 0) {
 		board_start(board);
@@ -71,10 +78,6 @@ int main(void)
 		goto sigint;
 	}
 
-	sigfillset(&all_signals);
-	signal(SIGINT,  sig_handler);
-	signal(SIGABRT, sig_handler);
-	signal(SIGTERM, sig_handler);
 
 
 
@@ -90,20 +93,22 @@ int main(void)
 		board_t moves     = {{0}};
 
 		switch(ch) {
-		case KEY_UP:    dir = UP;    break; // moving
+		case KEY_UP:    dir = UP;    break;
 		case KEY_DOWN:  dir = DOWN;  break;
 		case KEY_LEFT:  dir = LEFT;  break;
 		case KEY_RIGHT: dir = RIGHT; break;
 
-		case 'r': case 'R':               // start new game
+		/* restart */
+		case 'r': case 'R':
 			score = 0;
 			gameover = false;
 			board_start(board);
 			refresh_board(board_win, board, gameover);
 			refresh_score(score_win, score, 0, max_score);
-			continue; // main loop
+			continue;
 
-		case KEY_RESIZE:                  // terminal resize
+		/* terminal resize */
+		case KEY_RESIZE:
 			if (init_win(&board_win, &score_win) ==
 				                    WIN_TOO_SMALL) {
 				terminal_too_small = true;
@@ -114,8 +119,8 @@ int main(void)
 			}
 			refresh_board(board_win, board, gameover);
 			refresh_score(score_win, score, points, max_score);
-			continue;  // main loop
-		default: continue; // main loop
+			continue;
+		default: continue;
 		}
 
 		if (gameover) continue;
@@ -138,7 +143,7 @@ int main(void)
 			nanosleep(&addtile_time, NULL);
 			board_add_tile(board, false);
 			refresh_board(board_win, board, gameover);
-		//didn't slide, check if game's over
+		/* didn't slide, check if game's over */
 		} else if (!board_can_slide(board)) {
 			gameover = true;
 			refresh_board(board_win, board, gameover);
@@ -147,11 +152,10 @@ int main(void)
 		sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 		flushinp();
 	}
-
+	/* block all signals before saving */
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 sigint:
 	endwin();
-	if (save_game(board, score, max_score) != 0)
-		fprintf(stderr, "game not saved\n");
+	save_game(board, score, max_score);
 	return 0;
 }

@@ -31,6 +31,7 @@ static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),       // emtpy tile
 
 static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
 static const struct timespec end_move_time = {.tv_sec = 0, .tv_nsec = 6000000};
+extern bool autosave;
 
 
 bool init_win(WINDOW **board_win, WINDOW **score_win)
@@ -187,6 +188,13 @@ static void draw_score(WINDOW *score_win, int score, int points, int max_score)
 		mvwprintw(score_win, 1, 7, "%+6d", points);
 	} else {
 		mvwprintw(score_win, 1, 7, "       ");
+	}
+
+	if (!autosave) {
+		wattron(score_win, COLOR_PAIR(1));
+		mvwprintw(score_win, 8, 1, "Autosave is");
+		wattron(score_win, COLOR_PAIR(7));
+		mvwprintw(score_win, 9, 9, "OFF");
 	}
 
 	wattron(score_win, COLOR_PAIR(1));
