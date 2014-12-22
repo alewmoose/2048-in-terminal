@@ -48,11 +48,13 @@ int main(void)
 	const struct timespec addtile_time = {.tv_sec = 0,
 		                                .tv_nsec = 100000000};
 	srand(time(NULL));
+	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 	if (load_game(board, &score, &max_score) != 0) {
 		board_start(board);
 		score = 0;
 		max_score = 0;
 	}
+	sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 
 	setup_screen();
 	if (init_win(&board_win, &score_win) == WIN_TOO_SMALL) {
