@@ -4,8 +4,19 @@
 #define BOARD_SIZE  4
 #define BOARD_TILES (BOARD_SIZE * BOARD_SIZE)
 
-typedef int board_t[BOARD_SIZE][BOARD_SIZE];
-typedef enum {UP, DOWN, LEFT, RIGHT} dir_t;
+typedef struct board {
+	int tiles[BOARD_SIZE][BOARD_SIZE];
+} Board;
+
+typedef struct stats {
+	int score;
+	int points;
+	int max_score;
+	bool game_over;
+	bool auto_save;
+} Stats;
+
+typedef enum dir {UP, DOWN, LEFT, RIGHT} Dir;
 
 
 #endif
