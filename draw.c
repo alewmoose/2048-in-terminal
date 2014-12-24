@@ -166,26 +166,26 @@ static void draw_tile(int top, int left, int val)
 
 
 
-static void draw_board(const Board board)
+static void draw_board(const Board *board)
 {
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
 			int xc = TILE_WIDTH  * x + 1;
 			int yc = TILE_HEIGHT * y + 1;
-			draw_tile(board_win, yc, xc, board->tiles[y][x]);
+			draw_tile(yc, xc, board->tiles[y][x]);
 		}
 	}
 }
 
-static void draw_score(const Stats *stats)
+static void draw_stats(const Stats *stats)
 {
 	wattron(stats_win, COLOR_PAIR(2));
 	mvwprintw(stats_win, 1, 1, "Score");
 	mvwprintw(stats_win, 4, 1, "Best Score");
 
-	if (points > 0) {
+	if (stats->points > 0) {
 		wattron(stats_win, COLOR_PAIR(3));
-		mvwprintw(stats_win, 1, 7, "%+6d", points);
+		mvwprintw(stats_win, 1, 7, "%+6d", stats->points);
 	} else {
 		mvwprintw(stats_win, 1, 7, "       ");
 	}
@@ -255,19 +255,19 @@ static int sort_down(const void *l, const void *r)
 	return ((tile_t *)r)->y - ((tile_t *)l)->y;
 }
 
-void draw_slide(Board board, Board moves, Dir dir)
+void draw_slide(Board *board, const Board *moves, Dir dir)
 {
 	tile_t tiles[BOARD_TILES]; // sliding tiles
 	int tiles_n = 0;
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
-			if (moves[y][x]) {
+			if (moves->tiles[y][x]) {
 				tile_t tile;
 				// convert board position to window coords
 				tile.x = x * TILE_WIDTH + 1;
 				tile.y = y * TILE_HEIGHT + 1;
-				tile.val = board[y][x];
+				tile.val = board->tiles[y][x];
 				tile.tick = 6 / moves->tiles[y][x];
 				// remove sliding tiles from the board
 				board->tiles[y][x] = 0;
@@ -301,7 +301,7 @@ void draw_slide(Board board, Board moves, Dir dir)
 		}
 		draw_board(board); // draw static tiles
 		for (int t = 0; t < tiles_n; t++) { // draw moving tiles
-			draw_tile(board_win, tiles[t].y,
+			draw_tile(tiles[t].y,
 			          tiles[t].x, tiles[t].val);
 		}
 		wrefresh(board_win);

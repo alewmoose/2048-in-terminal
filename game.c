@@ -14,6 +14,8 @@
 #include "board.h"
 #include "save.h"
 
+#include <stdarg.h>
+
 #define ESC_KEY 27
 static jmp_buf  jmpbuf;
 static sigset_t all_signals;
@@ -28,6 +30,21 @@ static void sig_handler(int __attribute__((unused))sig_no)
 	longjmp(jmpbuf, 1);
 }
 
+void logit(char *fmt, ...)
+{
+	va_list p;
+	static FILE *logf = NULL;
+	if (!logf)
+		logf = fopen("log", "w");
+	if (!logf)
+		return;
+	va_start(p, fmt);
+	vfprintf(logf, fmt, p);
+	va_end(p);
+}
+
+	
+
 int main(void)
 {
 	if (!isatty(fileno(stdout))) {
@@ -41,35 +58,31 @@ int main(void)
 	signal(SIGTERM, sig_handler);
 	signal(SIGHUP,  sig_handler);
 
-	WINDOW *board_win = NULL;
-	WINDOW *score_win = NULL;
-	board_t board;
+	Board board;
+	Stats stats = {.game_over = 0, .auto_save = true};
 	/* use volatile to supress compiler warning:
 	 * "variable might be clobbered by longjmp" */
 	volatile bool terminal_too_small = false;
-	volatile bool gameover = false;
-	int score = 0;
-	int max_score = 0;
 	const struct timespec addtile_time = {.tv_sec = 0,
 		                                .tv_nsec = 100000000};
 	srand(time(NULL));
 
 
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
-	if (load_game(board, &score, &max_score) != 0) {
-		board_start(board);
-		score = 0;
-		max_score = 0;
+	if (load_game(&board, &stats) != 0) {
+		board_start(&board);
+		stats.score = 0;
+		stats.max_score = 0;
+		stats.auto_save = false;
 	}
 	sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 
 	setup_screen();
-	if (init_win(&board_win, &score_win) == WIN_TOO_SMALL) {
+	if (init_win() == WIN_TOO_SMALL) {
 		terminal_too_small = true;
 		print_too_small();
 	} else {
-		refresh_board(board_win, board, gameover);
-		refresh_score(score_win, score, 0, max_score);
+		draw(&board, &stats);
 	}
 
 
@@ -87,10 +100,9 @@ int main(void)
 		   until it's restored */
 		if (terminal_too_small && ch != KEY_RESIZE)
 			continue;
-		int points = 0;
-		dir_t dir;
-		board_t new_board = {{0}};
-		board_t moves     = {{0}};
+		Dir dir;
+		Board new_board;
+		Board moves;
 
 		switch(ch) {
 		case KEY_UP:    dir = UP;    break;
@@ -100,54 +112,49 @@ int main(void)
 
 		/* restart */
 		case 'r': case 'R':
-			score = 0;
-			gameover = false;
-			board_start(board);
-			refresh_board(board_win, board, gameover);
-			refresh_score(score_win, score, 0, max_score);
+			stats.score = 0;
+			stats.game_over = false;
+			board_start(&board);
+			draw(&board, &stats);
 			continue;
 
 		/* terminal resize */
 		case KEY_RESIZE:
-			if (init_win(&board_win, &score_win) ==
-				                    WIN_TOO_SMALL) {
+			if (init_win() == WIN_TOO_SMALL) {
 				terminal_too_small = true;
 				print_too_small();
-				continue;
 			} else {
 				terminal_too_small = false;
+				draw(&board, &stats);
 			}
-			refresh_board(board_win, board, gameover);
-			refresh_score(score_win, score, points, max_score);
 			continue;
-		default: continue;
+		default:
+			continue;
 		}
 
-		if (gameover) continue;
+		if (stats.game_over) continue;
 
 		/* block all signals while operating on board */
 		sigprocmask(SIG_BLOCK, &all_signals, NULL);
 
-		points = board_slide(board, new_board, moves, dir);
-		if (points >= 0) {
-			refresh_score(score_win, score, points, max_score);
-			draw_slide(board_win, board, moves, dir);
+		stats.points = board_slide(&board, &new_board, &moves, dir);
+		if (stats.points >= 0) {
+			draw(NULL, &stats);
+			draw_slide(&board, &moves, dir);
 
-			board_copy(board, new_board);
-			score += points;
-			if (score > max_score)
-				max_score = score;
-			refresh_board(board_win, board, gameover);
-			refresh_score(score_win, score, points, max_score);
+			board_copy(&board, &new_board);
+			stats.score += stats.points;
+			if (stats.score > stats.max_score)
+				stats.max_score = stats.score;
+			draw(&board, &stats);
 
 			nanosleep(&addtile_time, NULL);
-			board_add_tile(board, false);
-			refresh_board(board_win, board, gameover);
+			board_add_tile(&board, false);
+			draw(&board, NULL);
 		/* didn't slide, check if game's over */
-		} else if (!board_can_slide(board)) {
-			gameover = true;
-			refresh_board(board_win, board, gameover);
-			refresh_score(score_win, score, points, max_score);
+		} else if (!board_can_slide(&board)) {
+			stats.game_over = true;
+			draw(&board, &stats);
 		}
 		sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 		flushinp();
@@ -156,6 +163,6 @@ int main(void)
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 sigint:
 	endwin();
-	save_game(board, score, max_score);
+	save_game(&board, &stats);
 	return 0;
 }

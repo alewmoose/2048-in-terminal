@@ -44,7 +44,7 @@ int lock_save_file(void)
 	return 0;
 }
 
-static bool sane(Board *board, Stats *stats);
+static bool sane(Board *board, Stats *stats)
 {
 	if (stats->score < 0 || stats->max_score < 0 ||
 	    stats->max_score > MAX_POSSIBLE_SCORE ||
@@ -61,31 +61,31 @@ static bool sane(Board *board, Stats *stats);
 	return true;
 }
 
-int load_game(board_t board, int *score, int *max_score)
+int load_game(Board *board, Stats *stats)
 {
 	if (fd == -1)
 		return -1;
 	
 	ssize_t s;
-	s = read(fd, score, sizeof(int));
+	s = read(fd, &stats->score, sizeof(int));
 	if (s != sizeof(int))
 		return -1;
 
-	s = read(fd, max_score, sizeof(int));
+	s = read(fd, &stats->max_score, sizeof(int));
 	if (s != sizeof(int))
 		return -1;
 
-	s = read(fd, board, sizeof(board_t));
-	if (s != sizeof(board_t))
+	s = read(fd, board, sizeof(Board));
+	if (s != sizeof(Board))
 		return -1;
 
-	if (!sane(board, *score, *max_score))
+	if (!sane(board, stats))
 		return -1;
 
 	return 0;
 }
 
-int save_game(board_t board, int score, int max_score)
+int save_game(const Board *board, const Stats *stats)
 {
 	if (fd == -1)
 		return -1;
@@ -94,9 +94,9 @@ int save_game(board_t board, int score, int max_score)
 	off = lseek(fd, 0, SEEK_SET);
 	if (off == -1)
 		return -1;
-	write(fd, &score,     sizeof(int));
-	write(fd, &max_score, sizeof(int));
-	write(fd, board,      sizeof(board_t));
+	write(fd, &stats->score,     sizeof(int));
+	write(fd, &stats->max_score, sizeof(int));
+	write(fd, board,      sizeof(Board));
 	/* game is saved only once, close the file */
 	close(fd);
 	return 0;

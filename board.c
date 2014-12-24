@@ -9,7 +9,7 @@ static const int tile_num[] = { 0,
 	4096, 8192, 16384, 32768, 65536, 131072
 };
 
-inline void board_copy(Board *dest, Board *source)
+inline void board_copy(Board *dest, const Board *source)
 {
 	memcpy(dest, source, BOARD_TILES*sizeof(int));
 }
@@ -56,7 +56,7 @@ static void rotate_l(Board *board)
 	board_copy(&tmp, board);
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++)
-			board->tiles[BOARD_SIZE-1-x][y] = tmp->tiles[y][x];
+			board->tiles[BOARD_SIZE-1-x][y] = tmp.tiles[y][x];
 	}
 }
 
@@ -66,7 +66,7 @@ static void rotate_r(Board *board)
 	board_copy(&tmp, board);
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++)
-			board->tiles[x][BOARD_SIZE-1-y] = tmp-tiles[y][x];
+			board->tiles[x][BOARD_SIZE-1-y] = tmp.tiles[y][x];
 	}
 }
 
@@ -76,7 +76,7 @@ static void rotate_2(Board *board)
 	board_copy(&tmp, board);
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++)
-			board->tiles[y][BOARD_SIZE-1-x] = tmp->tiles[y][x];
+			board->tiles[y][BOARD_SIZE-1-x] = tmp.tiles[y][x];
 	}
 }
 
@@ -117,7 +117,7 @@ static int slide_left(Board *board, Board *moves)
 	return slided ? points : NO_SLIDE;
 }
 
-int board_slide(Board *board, Board *new_board, Board *moves,  Dir dir)
+int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
 {
 	/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
 	board_copy(new_board, board);
@@ -147,7 +147,7 @@ ext:
 }
 
 
-bool board_can_slide(Board board)
+bool board_can_slide(const Board *board)
 {
 	Board b1, b2; // dummies
 	if (board_slide(board, &b1, &b2, LEFT)  == NO_SLIDE &&
