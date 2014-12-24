@@ -12,10 +12,8 @@
 #define MAX_POSSIBLE_SCORE  3932156
 #define MAX_POSSIBLE_TILE   17
 
-static char filename[PATH_LEN];
-static int  fd;
-
-bool autosave = true;
+static char filename[PATH_LEN] = "";
+static int  fd = -1;
 
 
 static int get_filename(void)
@@ -29,8 +27,11 @@ static int get_filename(void)
 	return 0;
 }
 
-static int lock_file(void)
+int lock_save_file(void)
 {
+	if (get_filename() == -1)
+		return -1;
+
 	fd = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1)
 		return -1;
@@ -39,19 +40,20 @@ static int lock_file(void)
 		close(fd);
 		return -1;
 	}
+
 	return 0;
 }
 
-static bool sane(board_t board, int score, int max_score)
+static bool sane(Board *board, Stats *stats);
 {
-	if (score < 0 || max_score < 0 ||
-	    max_score > MAX_POSSIBLE_SCORE ||
-	    score > max_score)
+	if (stats->score < 0 || stats->max_score < 0 ||
+	    stats->max_score > MAX_POSSIBLE_SCORE ||
+	    stats->score > stats->max_score)
 	    	return false;
 
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
-			int tile = board[y][x];
+			int tile = board->tiles[y][x];
 			if (tile > MAX_POSSIBLE_TILE || tile < 0)
 				return false;
 		}
@@ -61,14 +63,8 @@ static bool sane(board_t board, int score, int max_score)
 
 int load_game(board_t board, int *score, int *max_score)
 {
-	if (get_filename() != 0) {
-		autosave = false;
+	if (fd == -1)
 		return -1;
-	}
-	if (lock_file() != 0) {
-		autosave = false;
-		return -1;
-	}
 	
 	ssize_t s;
 	s = read(fd, score, sizeof(int));
@@ -91,7 +87,7 @@ int load_game(board_t board, int *score, int *max_score)
 
 int save_game(board_t board, int score, int max_score)
 {
-	if (!autosave)
+	if (fd == -1)
 		return -1;
 
 	off_t off;
