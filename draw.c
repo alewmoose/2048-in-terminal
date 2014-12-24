@@ -214,7 +214,7 @@ void draw(const Board *board, const Stats *stats)
 {
 	if (board) {
 		draw_board(board);
-		if (stats->game_over) {
+		if (stats && stats->game_over) {
 			wattron(board_win, A_BOLD | COLOR_PAIR(1));
 			mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
 		          	  "GAME OVER");
@@ -224,6 +224,7 @@ void draw(const Board *board, const Stats *stats)
 	}
 	if (stats) {
 		draw_stats(stats);
+		wrefresh(stats_win);
 	}
 }
 

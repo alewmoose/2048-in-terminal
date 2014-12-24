@@ -13,8 +13,8 @@
 #include "draw.h"
 #include "board.h"
 #include "save.h"
+#include "logit.h"
 
-#include <stdarg.h>
 
 #define ESC_KEY 27
 static jmp_buf  jmpbuf;
@@ -30,20 +30,7 @@ static void sig_handler(int __attribute__((unused))sig_no)
 	longjmp(jmpbuf, 1);
 }
 
-void logit(char *fmt, ...)
-{
-	va_list p;
-	static FILE *logf = NULL;
-	if (!logf)
-		logf = fopen("log", "w");
-	if (!logf)
-		return;
-	va_start(p, fmt);
-	vfprintf(logf, fmt, p);
-	va_end(p);
-}
 
-	
 
 int main(void)
 {
@@ -58,26 +45,30 @@ int main(void)
 	signal(SIGTERM, sig_handler);
 	signal(SIGHUP,  sig_handler);
 
+
 	Board board;
 	Stats stats = {.game_over = 0, .auto_save = true};
 	/* use volatile to supress compiler warning:
 	 * "variable might be clobbered by longjmp" */
-	volatile bool terminal_too_small = false;
 	const struct timespec addtile_time = {.tv_sec = 0,
 		                                .tv_nsec = 100000000};
 	srand(time(NULL));
 
 
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
+	if (lock_save_file() != 0) {
+		stats.auto_save = false;
+	}
 	if (load_game(&board, &stats) != 0) {
 		board_start(&board);
 		stats.score = 0;
 		stats.max_score = 0;
-		stats.auto_save = false;
 	}
 	sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
+	logit("%d\n", sizeof(bool));
 
 	setup_screen();
+	volatile bool terminal_too_small = false;
 	if (init_win() == WIN_TOO_SMALL) {
 		terminal_too_small = true;
 		print_too_small();
@@ -138,7 +129,9 @@ int main(void)
 		sigprocmask(SIG_BLOCK, &all_signals, NULL);
 
 		stats.points = board_slide(&board, &new_board, &moves, dir);
+
 		if (stats.points >= 0) {
+			
 			draw(NULL, &stats);
 			draw_slide(&board, &moves, dir);
 
