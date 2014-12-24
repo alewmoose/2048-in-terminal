@@ -9,12 +9,12 @@ static const int tile_num[] = { 0,
 	4096, 8192, 16384, 32768, 65536, 131072
 };
 
-inline void board_copy(board_t dest, board_t source)
+inline void board_copy(Board *dest, Board *source)
 {
 	memcpy(dest, source, BOARD_TILES*sizeof(int));
 }
 
-void board_add_tile(board_t board, bool only2)
+void board_add_tile(Board *board, bool only2)
 {
 	int emptyx[BOARD_TILES], emptyy[BOARD_TILES], empty_n = 0;
 	int x, y, val;
@@ -27,7 +27,7 @@ void board_add_tile(board_t board, bool only2)
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
-			if (board[y][x] == 0) {
+			if (board->tiles[y][x] == 0) {
 				emptyx[empty_n] = x;
 				emptyy[empty_n] = y;
 				empty_n++;
@@ -39,55 +39,56 @@ void board_add_tile(board_t board, bool only2)
 		int r = rand() % empty_n;
 		x = emptyx[r];
 		y = emptyy[r];
-		board[y][x] = val;
+		board->tiles[y][x] = val;
 	}
 }
 
-void board_start(board_t board)
+void board_start(Board *board)
 {
 	memset(board, 0, BOARD_TILES*sizeof(int));
 	board_add_tile(board, true); // add only 2's on start
 	board_add_tile(board, true);
 }
 
-static void rotate_l(board_t board)
+static void rotate_l(Board *board)
 {
-	board_t tmp;
-	board_copy(tmp, board);
+	Board tmp;
+	board_copy(&tmp, board);
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++)
-			board[BOARD_SIZE-1-x][y] = tmp[y][x];
+			board->tiles[BOARD_SIZE-1-x][y] = tmp->tiles[y][x];
 	}
 }
 
-static void rotate_r(board_t board)
+static void rotate_r(Board *board)
 {
-	board_t tmp;
-	board_copy(tmp, board);
+	Board tmp;
+	board_copy(&tmp, board);
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++)
-			board[x][BOARD_SIZE-1-y] = tmp[y][x];
+			board->tiles[x][BOARD_SIZE-1-y] = tmp-tiles[y][x];
 	}
 }
 
-static void rotate_2(board_t board)
+static void rotate_2(Board *board)
 {
-	board_t tmp;
-	board_copy(tmp, board);
+	Board tmp;
+	board_copy(&tmp, board);
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++)
-			board[y][BOARD_SIZE-1-x] = tmp[y][x];
+			board->tiles[y][BOARD_SIZE-1-x] = tmp->tiles[y][x];
 	}
 }
 
-static int slide_left(board_t board, board_t moves)
+static int slide_left(Board *board, Board *moves)
 {
 	/* returns points or NO_SLIDE if didn't slide */
 	memset(moves, 0, BOARD_TILES*sizeof(int));
-	int points = 0, slided = 0;
+	int points = 0;
+	bool slided = false;
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
-		int *row = board[y];
+		int *row = board->tiles[y];
 		for (int x = 0; x < BOARD_SIZE-1; x++) {
 			if (row[x] == 0) { // found an empty spot, move next tile here
 				int next;
@@ -96,7 +97,7 @@ static int slide_left(board_t board, board_t moves)
 					if (!slided) slided = 1;
 					row[x] = row[next];
 					row[next] = 0;
-					moves[y][next] = next - x;
+					moves->tiles[y][next] = next - x;
 				}
 			}
 			if (row[x] != 0) { // search for tile with same num
@@ -107,7 +108,7 @@ static int slide_left(board_t board, board_t moves)
 					row[x]++;
 					points += tile_num[row[x]];
 					row[next] = 0;
-					moves[y][next] = next - x;
+					moves->tiles[y][next] = next - x;
 				}
 			}
 		}
@@ -116,7 +117,7 @@ static int slide_left(board_t board, board_t moves)
 	return slided ? points : NO_SLIDE;
 }
 
-int board_slide(board_t board, board_t new_board, board_t moves,  dir_t dir)
+int board_slide(Board *board, Board *new_board, Board *moves,  Dir dir)
 {
 	/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
 	board_copy(new_board, board);
@@ -146,13 +147,13 @@ ext:
 }
 
 
-bool board_can_slide(board_t board)
+bool board_can_slide(Board board)
 {
-	board_t b1, b2; // dummies
-	if (board_slide(board, b1, b2, LEFT)  == NO_SLIDE &&
-	    board_slide(board, b1, b2, RIGHT) == NO_SLIDE &&
-	    board_slide(board, b1, b2, UP)    == NO_SLIDE &&
-	    board_slide(board, b1, b2, DOWN)  == NO_SLIDE) {
+	Board b1, b2; // dummies
+	if (board_slide(board, &b1, &b2, LEFT)  == NO_SLIDE &&
+	    board_slide(board, &b1, &b2, RIGHT) == NO_SLIDE &&
+	    board_slide(board, &b1, &b2, UP)    == NO_SLIDE &&
+	    board_slide(board, &b1, &b2, DOWN)  == NO_SLIDE) {
 		return false;
 	}
 	return true;

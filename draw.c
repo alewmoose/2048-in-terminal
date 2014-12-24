@@ -31,15 +31,21 @@ static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),       // emtpy tile
 
 static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
 static const struct timespec end_move_time = {.tv_sec = 0, .tv_nsec = 6000000};
-extern bool autosave;
+
+static WINDOW *board_win;
+static WINDOW *stats_win;
 
 
-bool init_win(WINDOW **board_win, WINDOW **score_win)
+int init_win()
 {
-	if (*board_win) delwin(*board_win);
-	if (*score_win) delwin(*score_win);
-	*board_win = NULL;
-	*score_win = NULL;
+	if (board_win) {
+		delwin(board_win);
+		board_win = NULL;
+	}
+	if (stats_win) {
+		delwin(stats_win);
+		stats_win = NULL;
+	}
 
 	clear();
 	refresh();
@@ -48,37 +54,37 @@ bool init_win(WINDOW **board_win, WINDOW **score_win)
 	getmaxyx(stdscr, scr_height, scr_width);
 
 	int board_win_width  = TILE_WIDTH  * BOARD_SIZE + 2;
-	int score_win_width  = 13;
+	int stats_win_width  = 13;
 
 	int board_win_height = TILE_HEIGHT * BOARD_SIZE + 2;
-	int score_win_height = board_win_height - 2;
+	int stats_win_height = board_win_height - 2;
 
 	int board_win_top    = (scr_height - board_win_height) / 2;
-	int score_win_top    = board_win_top + 1;
+	int stats_win_top    = board_win_top + 1;
 
 	int board_win_left;
-	if (board_win_width + score_win_width < scr_width) {
-		board_win_left = (scr_width - board_win_width - score_win_width) / 2;
+	if (board_win_width + stats_win_width < scr_width) {
+		board_win_left = (scr_width - board_win_width - stats_win_width) / 2;
 	} else {
 		board_win_left = 0;
 	}
-	int score_win_left   = board_win_left + board_win_width + 1;
+	int stats_win_left   = board_win_left + board_win_width + 1;
 
 
 	if (board_win_height > scr_height || board_win_width > scr_width) {
 		return WIN_TOO_SMALL;
 	}
 
-	*board_win = newwin(board_win_height, board_win_width,
-	                    board_win_top, board_win_left);
-	wborder(*board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
+	board_win = newwin(board_win_height, board_win_width,
+	                   board_win_top, board_win_left);
+	wborder(board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
 	        ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 
 
-	*score_win = newwin(score_win_height, score_win_width,
-	                    score_win_top, score_win_left);
+	stats_win = newwin(stats_win_height, stats_win_width,
+	                   stats_win_top, stats_win_left);
 
-	if (!board_win || !score_win) { //nothing i can do about it
+	if (!board_win || !stats_win) {
 		endwin();
 		exit(1);
 	}
@@ -120,7 +126,7 @@ void print_too_small(void)
 	refresh();
 }
 
-static void draw_tile(WINDOW *board_win, int top, int left, int val)
+static void draw_tile(int top, int left, int val)
 {
 	int right  = left + TILE_WIDTH  - 1;
 	int bottom = top  + TILE_HEIGHT - 1;
@@ -160,68 +166,68 @@ static void draw_tile(WINDOW *board_win, int top, int left, int val)
 
 
 
-static void draw_board(WINDOW *board_win, board_t board, bool is_gameover)
+static void draw_board(const Board board)
 {
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
 			int xc = TILE_WIDTH  * x + 1;
 			int yc = TILE_HEIGHT * y + 1;
-			draw_tile(board_win, yc, xc, board[y][x]);
+			draw_tile(board_win, yc, xc, board->tiles[y][x]);
 		}
 	}
-	if (is_gameover) {
-		wattron(board_win, A_BOLD | COLOR_PAIR(1));
-		mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
-		          "GAME OVER");
-		wattroff(board_win, A_BOLD);
-	}
 }
 
-static void draw_score(WINDOW *score_win, int score, int points, int max_score)
+static void draw_score(const Stats *stats)
 {
-	wattron(score_win, COLOR_PAIR(2));
-	mvwprintw(score_win, 1, 1, "Score");
-	mvwprintw(score_win, 4, 1, "Best Score");
+	wattron(stats_win, COLOR_PAIR(2));
+	mvwprintw(stats_win, 1, 1, "Score");
+	mvwprintw(stats_win, 4, 1, "Best Score");
 
 	if (points > 0) {
-		wattron(score_win, COLOR_PAIR(3));
-		mvwprintw(score_win, 1, 7, "%+6d", points);
+		wattron(stats_win, COLOR_PAIR(3));
+		mvwprintw(stats_win, 1, 7, "%+6d", points);
 	} else {
-		mvwprintw(score_win, 1, 7, "       ");
+		mvwprintw(stats_win, 1, 7, "       ");
 	}
 
-	if (!autosave) {
-		wattron(score_win, COLOR_PAIR(1));
-		mvwprintw(score_win, 8, 1, "Autosave is");
-		wattron(score_win, COLOR_PAIR(7));
-		mvwprintw(score_win, 9, 9, "OFF");
+	if (!stats->auto_save) {
+		wattron(stats_win, COLOR_PAIR(1));
+		mvwprintw(stats_win, 8, 1, "Autosave is");
+		wattron(stats_win, COLOR_PAIR(7));
+		mvwprintw(stats_win, 9, 9, "OFF");
 	}
 
-	wattron(score_win, COLOR_PAIR(1));
-	mvwprintw(score_win, 2, 1, "%8d", score);
-	mvwprintw(score_win, 5, 1, "%8d", max_score);
-	mvwprintw(score_win, 15, 2, "estart");
-	mvwprintw(score_win, 16, 2, "uit");
+	wattron(stats_win, COLOR_PAIR(1));
+	mvwprintw(stats_win, 2, 1, "%8d", stats->score);
+	mvwprintw(stats_win, 5, 1, "%8d", stats->max_score);
+	mvwprintw(stats_win, 15, 2, "estart");
+	mvwprintw(stats_win, 16, 2, "uit");
 
-	wattron(score_win, COLOR_PAIR(3));
-	mvwaddch(score_win, 15, 1, 'R');
+	wattron(stats_win, COLOR_PAIR(3));
+	mvwaddch(stats_win, 15, 1, 'R');
 
-	wattron(score_win, COLOR_PAIR(7));
-	mvwaddch(score_win, 16, 1, 'Q');
+	wattron(stats_win, COLOR_PAIR(7));
+	mvwaddch(stats_win, 16, 1, 'Q');
 }
 
-inline void refresh_board(WINDOW *board_win, board_t board, bool is_gameover)
+void draw(const Board *board, const Stats *stats)
 {
-	draw_board(board_win, board, is_gameover);
-	wrefresh(board_win);
+	if (board) {
+		draw_board(board);
+		if (stats->game_over) {
+			wattron(board_win, A_BOLD | COLOR_PAIR(1));
+			mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
+		          	  "GAME OVER");
+			wattroff(board_win, A_BOLD);
+		}
+		wrefresh(board_win);
+	}
+	if (stats) {
+		draw_stats(stats);
+	}
 }
 
-inline void refresh_score(WINDOW *score_win, int score,
-                          int points, int max_score)
-{
-	draw_score(score_win, score, points, max_score);
-	wrefresh(score_win);
-}
+
 
 typedef struct { // sliding tile
 	int x, y; // coords
@@ -249,7 +255,7 @@ static int sort_down(const void *l, const void *r)
 	return ((tile_t *)r)->y - ((tile_t *)l)->y;
 }
 
-void draw_slide(WINDOW *board_win, board_t board, board_t moves, dir_t dir)
+void draw_slide(Board board, Board moves, Dir dir)
 {
 	tile_t tiles[BOARD_TILES]; // sliding tiles
 	int tiles_n = 0;
@@ -262,9 +268,9 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, dir_t dir)
 				tile.x = x * TILE_WIDTH + 1;
 				tile.y = y * TILE_HEIGHT + 1;
 				tile.val = board[y][x];
-				tile.tick = 6 / moves[y][x];
+				tile.tick = 6 / moves->tiles[y][x];
 				// remove sliding tiles from the board
-				board[y][x] = 0;
+				board->tiles[y][x] = 0;
 				tiles[tiles_n++] = tile;
 			}
 		}
@@ -293,7 +299,7 @@ void draw_slide(WINDOW *board_win, board_t board, board_t moves, dir_t dir)
 				tiles[t].y += my;
 			}
 		}
-		draw_board(board_win, board, 0); // draw static tiles
+		draw_board(board); // draw static tiles
 		for (int t = 0; t < tiles_n; t++) { // draw moving tiles
 			draw_tile(board_win, tiles[t].y,
 			          tiles[t].x, tiles[t].val);

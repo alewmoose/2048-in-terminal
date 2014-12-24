@@ -5,11 +5,10 @@
 
 #define NO_SLIDE -1
 
-void board_copy(board_t dest, board_t source);
-
-void board_start    (board_t board);
-void board_add_tile (board_t board, bool only2);
-int  board_slide    (board_t board, board_t new_board, board_t moves,  dir_t dir);
-bool board_can_slide(board_t board);
+void board_copy     (Board *dest, const Board *source);
+void board_start    (Board *board);
+void board_add_tile (Board *board, bool only2);
+int  board_slide    (const *Board board, Board *new_board, Board *moves,  Dir dir);
+bool board_can_slide(const Board *board);
 
 #endif
