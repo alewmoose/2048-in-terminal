@@ -1,6 +1,6 @@
 #ifndef SAVE_H
 #define SAVE_H
-#include "board.h"
+#include "common.h"
 
 int lock_save_file(void);
 int load_game(Board *board, Stats *stats);

@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #include <unistd.h>
-#include <sys/file.h>
 #include <ncurses.h>
 
 #include <stdlib.h>
@@ -8,7 +7,6 @@
 #include <setjmp.h>
 #include <time.h>
 #include <stdbool.h>
-#include <errno.h>
 
 #include "draw.h"
 #include "board.h"

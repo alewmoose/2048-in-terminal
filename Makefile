@@ -15,7 +15,6 @@ board.o: board.c board.h common.h
 	cc -c board.c $(CFLAGS)
 
 draw.o: draw.c draw.h common.h
-	cc -c draw.c $(CFLAGS)
 
 save.o: save.c save.h common.h
 	cc -c save.c $(CFLAGS)
