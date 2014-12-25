@@ -14,6 +14,7 @@ static const char *tile_str[] = { "        ",
 	"  8192  ", " 16384  ", " 32768  ", " 65536  ",
 	" 131072 "
 };
+static const char *empty_tile_str = "          ";
 
 static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),       // emtpy tile
 	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),// 2 4 8 16
@@ -130,38 +131,35 @@ static void draw_tile(int top, int left, int val)
 {
 	int right  = left + TILE_WIDTH  - 1;
 	int bottom = top  + TILE_HEIGHT - 1;
+	int center = (top + bottom) / 2;
 
-	// draw empty tile
+	/* draw empty tile */
 	if (val == 0) {
-		for (int y = top; y <= bottom; y++) {
-			// 10 spaces
-			mvwprintw(board_win, y, left, "          ");
-		}
+		for (int y = top; y <= bottom; y++)
+			mvwprintw(board_win, y, left, empty_tile_str);
 		return;
 	}
 
 	wattrset(board_win, tile_attr[val]);
 
-	// draw top line
-	mvwaddch(board_win, top, left, ACS_ULCORNER);
-	for (int x = left+1; x < right; x++)
-		waddch(board_win, ACS_HLINE);
-	waddch(board_win, ACS_URCORNER);
+	/* erase tile except it's board */
+	for (int y = top+1; y < bottom; y++)
+		mvwprintw(board_win, y, left+1, tile_str[0]);
 
-	for (int y = top+1; y < bottom; y++) {
-		mvwaddch(board_win, y, left, ACS_VLINE);
-		if (y == (top + bottom) / 2) {  //central line with number
-			wprintw(board_win, tile_str[val]);
-		} else {
-			wprintw(board_win, tile_str[0]); // 8 spaces
-		}
-		waddch(board_win, ACS_VLINE);
-	}
+	/* draw corners */
+	mvwaddch(board_win, top,    left,  ACS_ULCORNER);
+	mvwaddch(board_win, top,    right, ACS_URCORNER);
+	mvwaddch(board_win, bottom, left,  ACS_LLCORNER);
+	mvwaddch(board_win, bottom, right, ACS_LRCORNER);
 
-	// draw bottom line
-	mvwaddch(board_win, bottom, left, ACS_LLCORNER);
-	for (int x = left+1; x < right; x++) waddch(board_win, ACS_HLINE);
-	waddch(board_win, ACS_LRCORNER);
+	/* draw lines */
+	mvwhline(board_win, top,    left+1, ACS_HLINE, TILE_WIDTH-2);
+	mvwhline(board_win, bottom, left+1, ACS_HLINE, TILE_WIDTH-2);
+	mvwvline(board_win, top+1, left,  ACS_VLINE, TILE_HEIGHT-2);
+	mvwvline(board_win, top+1, right, ACS_VLINE, TILE_HEIGHT-2);
+
+	/* draw number */
+	mvwprintw(board_win, center, left+1, tile_str[val]);
 }
 
 

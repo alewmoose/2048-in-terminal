@@ -43,7 +43,6 @@ int main(void)
 	signal(SIGTERM, sig_handler);
 	signal(SIGHUP,  sig_handler);
 
-
 	Board board;
 	Stats stats = {.game_over = 0, .auto_save = true};
 	/* use volatile to supress compiler warning:
@@ -129,7 +128,6 @@ int main(void)
 		stats.points = board_slide(&board, &new_board, &moves, dir);
 
 		if (stats.points >= 0) {
-			
 			draw(NULL, &stats);
 			draw_slide(&board, &moves, dir);
 
