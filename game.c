@@ -32,8 +32,8 @@ static void sig_handler(int __attribute__((unused))sig_no)
 
 int main(void)
 {
-	if (!isatty(fileno(stdout))) {
-		/* not running in terminal */
+	if (!isatty(fileno(stdout)) ||
+	    !isatty(fileno(stdin))) {
 		exit(1);
 	}
 
