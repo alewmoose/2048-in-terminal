@@ -18,50 +18,47 @@ static bool sane(Board *board, Stats *stats);
 static int  get_filename(void);
 
 
-int lock_save_file(void)
+int load_game(Board *board, Stats *stats)
 {
+	stats->auto_save = false;
+
 	if (get_filename() == -1)
-		return -1;
+		goto open_failed;
 
 	fd = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1)
-		return -1;
-	
-	if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
-		close(fd);
-		return -1;
-	}
+		goto open_failed;
 
-	return 0;
-}
+	if (flock(fd, LOCK_EX | LOCK_NB) != -1)
+		stats->auto_save = true;
 
-int load_game(Board *board, Stats *stats)
-{
-	if (fd == -1)
-		return -1;
-	
 	ssize_t s;
 	s = read(fd, &stats->score, sizeof(int));
 	if (s != sizeof(int))
-		return -1;
+		goto read_failed;
 
 	s = read(fd, &stats->max_score, sizeof(int));
 	if (s != sizeof(int))
-		return -1;
+		goto read_failed;
 
 	s = read(fd, board, sizeof(Board));
 	if (s != sizeof(Board))
-		return -1;
+		goto read_failed;
 
 	if (!sane(board, stats))
-		return -1;
+		goto read_failed;
 
 	return 0;
+
+read_failed:
+	close(fd);
+open_failed:
+	return -1;
 }
 
 int save_game(const Board *board, const Stats *stats)
 {
-	if (fd == -1)
+	if (fd == -1 || !stats->auto_save)
 		return -1;
 
 	off_t off;

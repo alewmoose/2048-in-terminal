@@ -1,41 +1,41 @@
 #define _GNU_SOURCE
 #include <unistd.h>
 #include <ncurses.h>
-
 #include <stdlib.h>
 #include <signal.h>
-#include <setjmp.h>
 #include <time.h>
 #include <stdbool.h>
-
 #include "draw.h"
 #include "board.h"
 #include "save.h"
-#include "logit.h"
-
 
 #define ESC_KEY 27
-static jmp_buf  jmpbuf;
+
 static sigset_t all_signals;
+static Board board;
+static Stats stats = {.auto_save = false, .game_over = false};
 
-
-/* Not sure if it's safe to longjmp from signal handler.
- * Jumps back to main on every signal.
- */
 static void sig_handler(int __attribute__((unused))sig_no)
 {
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
-	//longjmp(jmpbuf, 1);
+	save_game(&board, &stats);
+	endwin();
+	exit(0);
 }
-
 
 
 int main(void)
 {
+	const struct timespec addtile_time = {.tv_sec = 0,
+	                                      .tv_nsec = 100000000};
+	bool terminal_too_small;
+
 	if (!isatty(fileno(stdout)) ||
 	    !isatty(fileno(stdin))) {
 		exit(1);
 	}
+
+	srand(time(NULL));
 
 	sigfillset(&all_signals);
 	signal(SIGINT,  sig_handler);
@@ -43,51 +43,31 @@ int main(void)
 	signal(SIGTERM, sig_handler);
 	signal(SIGHUP,  sig_handler);
 
-	Board board;
-	Stats stats = {.game_over = 0, .auto_save = true};
-	/* use volatile to supress compiler warning:
-	 * "variable might be clobbered by longjmp" */
-	const struct timespec addtile_time = {.tv_sec = 0,
-		                                .tv_nsec = 100000000};
-	srand(time(NULL));
-
-
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
-	if (lock_save_file() != 0) {
-		stats.auto_save = false;
-	}
 	if (load_game(&board, &stats) != 0) {
 		board_start(&board);
 		stats.score = 0;
 		stats.max_score = 0;
 	}
-	sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
-	logit("%d\n", sizeof(bool));
 
 	setup_screen();
-	volatile bool terminal_too_small = false;
 	if (init_win() == WIN_TOO_SMALL) {
 		terminal_too_small = true;
 		print_too_small();
 	} else {
+		terminal_too_small = false;
 		draw(&board, &stats);
 	}
 
-
-	if (setjmp(jmpbuf) != 0) {
-
-		goto sigint;
-	} 
-
-
-
+	sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 
 	int ch;
 	while ((ch = getch()) != 'q' && ch != 'Q' && ch != ESC_KEY) {
+		sigprocmask(SIG_BLOCK, &all_signals, NULL);
 		/* if terminal's too small do nothing
 		   until it's restored */
 		if (terminal_too_small && ch != KEY_RESIZE)
-			continue;
+			goto next;
 		Dir dir;
 		Board new_board;
 		Board moves;
@@ -104,7 +84,8 @@ int main(void)
 			stats.game_over = false;
 			board_start(&board);
 			draw(&board, &stats);
-			continue;
+			//sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
+			goto next;
 
 		/* terminal resize */
 		case KEY_RESIZE:
@@ -115,15 +96,14 @@ int main(void)
 				terminal_too_small = false;
 				draw(&board, &stats);
 			}
-			continue;
+			goto next;
 		default:
-			continue;
+			goto next;
 		}
 
-		if (stats.game_over) continue;
+		if (stats.game_over)
+			goto next;
 
-		/* block all signals while operating on board */
-		//sigprocmask(SIG_BLOCK, &all_signals, NULL);
 
 		stats.points = board_slide(&board, &new_board, &moves, dir);
 
@@ -145,12 +125,12 @@ int main(void)
 			stats.game_over = true;
 			draw(&board, &stats);
 		}
+	next:
 		sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 		flushinp();
 	}
 	/* block all signals before saving */
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
-sigint:
 	endwin();
 	save_game(&board, &stats);
 	return 0;
