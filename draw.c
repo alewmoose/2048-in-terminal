@@ -23,20 +23,20 @@ static const char *tile_str[] = { "        ",
 };
 static const char *empty_tile_str = "          ";
 
-static const NCURSES_ATTR_T  tile_attr[] = {COLOR_PAIR(1),       // emtpy tile
-	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),// 2 4 8 16
-	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),               // 32 64 128
-	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD,           // 256  512
-	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD,           // 1024 2048
-	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD,           // 4096 8192
-	COLOR_PAIR(7) | A_BOLD,                                   // 16384
-	COLOR_PAIR(1) | A_BOLD,                     // 32768
-	COLOR_PAIR(2) | A_BOLD,                     // 65536
-	COLOR_PAIR(3) | A_BOLD,                     // 131072
+static const NCURSES_ATTR_T  tile_attr[] = {
+	COLOR_PAIR(1), COLOR_PAIR(1), /* empty 2 */
+	COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4), /*  4  8  16 */
+	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7), /* 32 64 128 */
+	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD, /* 256  512 */
+	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD, /* 1024 2048 */
+	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD, /* 4096 8192 */
+	COLOR_PAIR(7) | A_BOLD, /* 16384 */
+	COLOR_PAIR(1) | A_BOLD, /* 32768 */
+	COLOR_PAIR(2) | A_BOLD, /* 65536 */
+	COLOR_PAIR(3) | A_BOLD, /* 131072 */
 };
 
 static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 30000000};
-//static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
 static const struct timespec end_move_time = {.tv_sec = 0, .tv_nsec = 6000000};
 
 static WINDOW *board_win;
@@ -45,6 +45,12 @@ static WINDOW *stats_win;
 
 int init_win()
 {
+
+	static const int bwidth  = TILE_WIDTH  * BOARD_SIZE + 2;
+	static const int bheight = TILE_HEIGHT * BOARD_SIZE + 2;
+	static const int swidth  = 13;
+	static const int sheight = bheight - 2;
+
 	if (board_win) {
 		delwin(board_win);
 		board_win = NULL;
@@ -53,42 +59,33 @@ int init_win()
 		delwin(stats_win);
 		stats_win = NULL;
 	}
-
 	clear();
 	refresh();
 
 	int scr_width, scr_height;
 	getmaxyx(stdscr, scr_height, scr_width);
 
-	int board_win_width  = TILE_WIDTH  * BOARD_SIZE + 2;
-	int stats_win_width  = 13;
+	int btop    = (scr_height - bheight) / 2;
+	int stop    = btop + 1;
 
-	int board_win_height = TILE_HEIGHT * BOARD_SIZE + 2;
-	int stats_win_height = board_win_height - 2;
-
-	int board_win_top    = (scr_height - board_win_height) / 2;
-	int stats_win_top    = board_win_top + 1;
-
-	int board_win_left;
-	if (board_win_width + stats_win_width < scr_width)
-		board_win_left = (scr_width - board_win_width - stats_win_width) / 2;
+	int bleft;
+	if (bwidth + swidth < scr_width)
+		bleft = (scr_width - bwidth - swidth) / 2;
 	else
-		board_win_left = 0;
-	int stats_win_left   = board_win_left + board_win_width + 1;
+		bleft = 0;
+	int sleft   = bleft + bwidth + 1;
 
 
-	if (board_win_height > scr_height || board_win_width > scr_width) {
+	if (bheight > scr_height || bwidth > scr_width) {
 		return WIN_TOO_SMALL;
 	}
 
-	board_win = newwin(board_win_height, board_win_width,
-	                   board_win_top, board_win_left);
+	board_win = newwin(bheight, bwidth, btop, bleft);
+	wattrset(board_win, COLOR_PAIR(1));
 	wborder(board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
 	        ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 
-	stats_win = newwin(stats_win_height, stats_win_width,
-	                   stats_win_top, stats_win_left);
-
+	stats_win = newwin(sheight, swidth, stop, sleft);
 	if (!board_win || !stats_win) {
 		endwin();
 		exit(1);
@@ -141,8 +138,9 @@ void draw(const Board *board, const Stats *stats)
 		draw_board(board);
 		if (stats && stats->game_over) {
 			wattron(board_win, A_BOLD | COLOR_PAIR(1));
-			mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
-		          	  "GAME OVER");
+			mvwprintw(board_win, TILE_HEIGHT*2,
+				  (TILE_WIDTH*BOARD_SIZE - 8) / 2,
+		                  "GAME OVER");
 			wattroff(board_win, A_BOLD);
 		}
 		wrefresh(board_win);
@@ -292,7 +290,7 @@ void draw_slide(Board *board, const Board *moves, Dir dir)
 	nanosleep(&end_move_time, NULL);
 }
 
-	
+
 /* what tile to draw first?
    if sliding left, draw sliding tiles from left to right,
    same for other directions */
