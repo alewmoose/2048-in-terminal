@@ -131,7 +131,7 @@ int main(void)
 			draw(NULL, &stats);
 			draw_slide(&board, &moves, dir);
 
-			board_copy(&board, &new_board);
+			board = new_board;
 			stats.score += stats.points;
 			if (stats.score > stats.max_score)
 				stats.max_score = stats.score;
