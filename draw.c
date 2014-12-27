@@ -9,7 +9,7 @@
 
 typedef struct tile {
 	int x, y;
-	int tick;
+	int mx, my;
 	int val;
 } Tile;
 
@@ -35,7 +35,8 @@ static const NCURSES_ATTR_T  tile_attr[] = {COLOR_PAIR(1),       // emtpy tile
 	COLOR_PAIR(3) | A_BOLD,                     // 131072
 };
 
-static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
+static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 30000000};
+//static const struct timespec tick_time     = {.tv_sec = 0, .tv_nsec = 5000000};
 static const struct timespec end_move_time = {.tv_sec = 0, .tv_nsec = 6000000};
 
 static WINDOW *board_win;
@@ -250,40 +251,39 @@ void draw_slide(Board *board, const Board *moves, Dir dir)
 			if (moves->tiles[y][x] == 0)
 				continue;
 			Tile tile;
+			int step = moves->tiles[y][x];
 			/* convert board position to window coords */
 			tile.x = x * TILE_WIDTH + 1;
 			tile.y = y * TILE_HEIGHT + 1;
 			tile.val = board->tiles[y][x];
-			tile.tick = 6 / moves->tiles[y][x];
-			/* remove sliding tiles from the board */
-			board->tiles[y][x] = 0;
+
+			switch (dir) {
+			case UP:    tile.mx = 0; tile.my = -1 * step; break;
+			case DOWN:  tile.mx = 0; tile.my =  1 * step; break;
+			case LEFT:  tile.mx = -2 * step; tile.my = 0; break;
+			case RIGHT: tile.mx =  2 * step; tile.my = 0; break;
+			}
 			tiles[tiles_n++] = tile;
 		}
 	}
 
 	int (*sort)(const void*, const void*);
-	int mx = 0, my = 0; /* coord modifiers */
 	switch (dir) {
-	case LEFT:  sort = sort_left;  mx = -2; break;
-	case RIGHT: sort = sort_right; mx =  2; break;
-	case UP:    sort = sort_up;    my = -1; break;
-	case DOWN:  sort = sort_down;  my =  1; break;
+	case LEFT:  sort = sort_left;  break;
+	case RIGHT: sort = sort_right; break;
+	case UP:    sort = sort_up;    break;
+	case DOWN:  sort = sort_down;  break;
 	default :   exit(1); break;
 	}
 	/* sort sliding tiles according to direction */
 	qsort(tiles, tiles_n, sizeof(Tile), sort);
 
 	nanosleep(&tick_time, NULL);
-	/* sliding continues for 30 ticks,
-	   a tile can move every 1, 2 or 3 ticks */
-	for (int tick = 1; tick <= 30; tick++) {
+	for (int tick = 1; tick <= 5; tick++) {
 		for (int t = 0; t < tiles_n; t++) {
-			if (tick % tiles[t].tick != 0)
-				continue;
-			/* move tile */
 			draw_tile(tiles[t].y, tiles[t].x, 0);
-			tiles[t].x += mx;
-			tiles[t].y += my;
+			tiles[t].x += tiles[t].mx;
+			tiles[t].y += tiles[t].my;
 			draw_tile(tiles[t].y, tiles[t].x, tiles[t].val);
 		}
 		wrefresh(board_win);
@@ -293,7 +293,6 @@ void draw_slide(Board *board, const Board *moves, Dir dir)
 }
 
 	
-
 /* what tile to draw first?
    if sliding left, draw sliding tiles from left to right,
    same for other directions */
