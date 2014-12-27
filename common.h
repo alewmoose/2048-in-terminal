@@ -16,6 +16,10 @@ typedef struct stats {
 	bool auto_save;
 } Stats;
 
+typedef struct coord {
+	int x, y;
+} Coord;
+
 typedef enum dir {UP, DOWN, LEFT, RIGHT} Dir;
 
 

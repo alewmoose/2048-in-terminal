@@ -4,27 +4,37 @@
 #include <stdbool.h>
 #include "board.h"
 
-static const int tile_num[] = { 0,
+static const int tile_num[] = {0,
 	2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048,
 	4096, 8192, 16384, 32768, 65536, 131072
 };
 
+void board_start(Board *board)
+{
+	memset(board, 0, sizeof(Board));
+	/* add only 2's on start */
+	board_add_tile(board, true);
+	board_add_tile(board, true);
+}
+
 void board_add_tile(Board *board, bool only2)
 {
-	int emptyx[BOARD_TILES], emptyy[BOARD_TILES], empty_n = 0;
-	int x, y, val;
-// 12.5% chance of getting '4'
+	Coord empty[BOARD_TILES];
+	int empty_n = 0;
+	int val;
+
 	if (only2) {
 		val = 1;
 	} else {
+		/* 12.5% chance of getting '4' */
 		val = (rand() % 8 == 1) ? 2 : 1;
 	}
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
 			if (board->tiles[y][x] == 0) {
-				emptyx[empty_n] = x;
-				emptyy[empty_n] = y;
+				empty[empty_n].x = x;
+				empty[empty_n].y = y;
 				empty_n++;
 			}
 		}
@@ -32,17 +42,63 @@ void board_add_tile(Board *board, bool only2)
 
 	if (empty_n > 0) {
 		int r = rand() % empty_n;
-		x = emptyx[r];
-		y = emptyy[r];
+		int x = empty[r].x;
+		int y = empty[r].y;
 		board->tiles[y][x] = val;
 	}
 }
 
-void board_start(Board *board)
+static void rotate_l(Board *board);
+static void rotate_r(Board *board);
+static void rotate_2(Board *board);
+static int  slide_left(Board *board, Board *moves);
+
+/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
+int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
 {
-	memset(board, 0, BOARD_TILES*sizeof(int));
-	board_add_tile(board, true); // add only 2's on start
-	board_add_tile(board, true);
+	*new_board = *board;
+
+	/* rotate board */
+	switch (dir) {
+	case RIGHT: rotate_2(new_board); break;
+	case UP:    rotate_l(new_board); break;
+	case DOWN:  rotate_r(new_board); break;
+	case LEFT:  break;
+	}
+
+	int points = slide_left(new_board, moves);
+	if (points == NO_SLIDE)
+		goto noslide;
+
+	/* rotate back */
+	switch (dir) {
+	case RIGHT:
+		rotate_2(new_board);
+		rotate_2(moves);
+		break;
+	case UP:
+		rotate_r(new_board);
+		rotate_r(moves);
+		break;
+	case DOWN:
+		rotate_l(new_board);
+		rotate_l(moves);
+		break;
+	case LEFT: break;
+	}
+noslide:
+	return points;
+}
+bool board_can_slide(const Board *board)
+{
+	Board b1, b2; /* dummies */
+	if (board_slide(board, &b1, &b2, LEFT)  == NO_SLIDE &&
+	    board_slide(board, &b1, &b2, RIGHT) == NO_SLIDE &&
+	    board_slide(board, &b1, &b2, UP)    == NO_SLIDE &&
+	    board_slide(board, &b1, &b2, DOWN)  == NO_SLIDE) {
+		return false;
+	}
+	return true;
 }
 
 static void rotate_l(Board *board)
@@ -72,83 +128,65 @@ static void rotate_2(Board *board)
 	}
 }
 
+
+static int next_same(int row[BOARD_SIZE], int val, int start);
+static int next_any (int row[BOARD_SIZE], int start);
+
+/* returns points or NO_SLIDE if didn't slide */
 static int slide_left(Board *board, Board *moves)
 {
-	/* returns points or NO_SLIDE if didn't slide */
-	memset(moves, 0, BOARD_TILES*sizeof(int));
-	int points = 0;
+	memset(moves, 0, sizeof(Board));
+	int  points = 0;
 	bool slided = false;
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		int *row = board->tiles[y];
 		for (int x = 0; x < BOARD_SIZE-1; x++) {
-			if (row[x] == 0) { // found an empty spot, move next tile here
-				int next;
-				for (next = x+1; next < BOARD_SIZE && row[next] == 0; next++);
-				if (next < BOARD_SIZE) {
-					if (!slided) slided = 1;
-					row[x] = row[next];
-					row[next] = 0;
-					moves->tiles[y][next] = next - x;
-				}
+			if (row[x] == 0) {
+				int next = next_any(row, x + 1);
+				if (next == -1)
+					goto next_row;
+
+				/* found an empty spot, move next tile here */
+				slided = true;
+				row[x] = row[next];
+				row[next] = 0;
+				moves->tiles[y][next] = next - x;
 			}
-			if (row[x] != 0) { // search for tile with same num
-				int next;
-				for (next = x+1; next < BOARD_SIZE && row[next] == 0; next++);
-				if (next < BOARD_SIZE && row[x] == row[next]) {
-					if (!slided) slided = 1;
-					row[x]++;
-					points += tile_num[row[x]];
-					row[next] = 0;
-					moves->tiles[y][next] = next - x;
-				}
+			if (row[x] != 0) {
+				int next = next_same(row, row[x], x + 1);
+				if (next == -1)
+					continue;
+
+				/* found same tile, merge */
+				slided = true;
+				row[x]++;
+				row[next] = 0;
+				points += tile_num[row[x]];
+				moves->tiles[y][next] = next - x;
 			}
 		}
+	next_row: ;
 	}
 
 	return slided ? points : NO_SLIDE;
 }
 
-int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
+static int next_any(int row[BOARD_SIZE], int start)
 {
-	/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
-	*new_board = *board;
-
-	// rotate field
-	if      (dir == RIGHT) rotate_2(new_board);
-	else if (dir == UP)    rotate_l(new_board);
-	else if (dir == DOWN)  rotate_r(new_board);
-
-	int points = slide_left(new_board, moves);
-	if (points == NO_SLIDE)
-		goto ext;
-
-	// rotate back
-	if (dir == RIGHT) {
-		rotate_2(new_board);
-		rotate_2(moves);
-	} else if (dir == UP) {
-		rotate_r(new_board);
-		rotate_r(moves);
-	} else if (dir == DOWN) {
-		rotate_l(new_board);
-		rotate_l(moves);
-	}
-ext:
-	return points;
+	for (int i = start; i < BOARD_SIZE; i++)
+		if (row[i] > 0)
+			return i;
+	return -1;
 }
 
-
-bool board_can_slide(const Board *board)
+static int next_same(int row[BOARD_SIZE], int val, int start)
 {
-	Board b1, b2; // dummies
-	if (board_slide(board, &b1, &b2, LEFT)  == NO_SLIDE &&
-	    board_slide(board, &b1, &b2, RIGHT) == NO_SLIDE &&
-	    board_slide(board, &b1, &b2, UP)    == NO_SLIDE &&
-	    board_slide(board, &b1, &b2, DOWN)  == NO_SLIDE) {
-		return false;
+	for (int i = start; i < BOARD_SIZE; i++) {
+		if (row[i] == val)
+			return i;
+		else if (row[i] != 0)
+			return -1;
 	}
-	return true;
+	return -1;
 }
-
-

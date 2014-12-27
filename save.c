@@ -14,17 +14,9 @@
 static char filename[PATH_LEN] = "";
 static int  fd = -1;
 
+static bool sane(Board *board, Stats *stats);
+static int  get_filename(void);
 
-static int get_filename(void)
-{
-	char *home = getenv("HOME");
-	if (!home || strlen(home) > PATH_LEN-7)
-		return -1;
-
-	strcpy(filename, home);
-	strcat(filename, "/.2048"); 
-	return 0;
-}
 
 int lock_save_file(void)
 {
@@ -41,23 +33,6 @@ int lock_save_file(void)
 	}
 
 	return 0;
-}
-
-static bool sane(Board *board, Stats *stats)
-{
-	if (stats->score < 0 || stats->max_score < 0 ||
-	    stats->max_score > MAX_POSSIBLE_SCORE ||
-	    stats->score > stats->max_score)
-	    	return false;
-
-	for (int y = 0; y < 4; y++) {
-		for (int x = 0; x < 4; x++) {
-			int tile = board->tiles[y][x];
-			if (tile > MAX_POSSIBLE_TILE || tile < 0)
-				return false;
-		}
-	}
-	return true;
 }
 
 int load_game(Board *board, Stats *stats)
@@ -99,4 +74,32 @@ int save_game(const Board *board, const Stats *stats)
 	/* game is saved only once, close the file */
 	close(fd);
 	return 0;
+}
+
+static int get_filename(void)
+{
+	char *home = getenv("HOME");
+	if (!home || strlen(home) > PATH_LEN-7)
+		return -1;
+
+	strcpy(filename, home);
+	strcat(filename, "/.2048"); 
+	return 0;
+}
+
+static bool sane(Board *board, Stats *stats)
+{
+	if (stats->score < 0 || stats->max_score < 0 ||
+	    stats->max_score > MAX_POSSIBLE_SCORE ||
+	    stats->score > stats->max_score)
+	    	return false;
+
+	for (int y = 0; y < 4; y++) {
+		for (int x = 0; x < 4; x++) {
+			int tile = board->tiles[y][x];
+			if (tile > MAX_POSSIBLE_TILE || tile < 0)
+				return false;
+		}
+	}
+	return true;
 }
