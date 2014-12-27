@@ -25,7 +25,7 @@ static sigset_t all_signals;
 static void sig_handler(int __attribute__((unused))sig_no)
 {
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
-	longjmp(jmpbuf, 1);
+	//longjmp(jmpbuf, 1);
 }
 
 
@@ -75,9 +75,9 @@ int main(void)
 
 
 	if (setjmp(jmpbuf) != 0) {
-		/* longjmp from sig_handler */
+
 		goto sigint;
-	}
+	} 
 
 
 
@@ -123,7 +123,7 @@ int main(void)
 		if (stats.game_over) continue;
 
 		/* block all signals while operating on board */
-		sigprocmask(SIG_BLOCK, &all_signals, NULL);
+		//sigprocmask(SIG_BLOCK, &all_signals, NULL);
 
 		stats.points = board_slide(&board, &new_board, &moves, dir);
 

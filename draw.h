@@ -12,12 +12,9 @@
 
 void setup_screen(void);
 int  init_win();
-
 void print_too_small(void);
-
-void draw_slide(Board *board, const Board *moves, Dir dir);
-
 void draw(const Board *board, const Stats *stats);
+void draw_slide(Board *board, const Board *moves, Dir dir);
 
 
 #endif

@@ -7,6 +7,13 @@
 #include "draw.h"
 
 
+typedef struct tile {
+	int x, y;
+	int tick;
+	int val;
+} Tile;
+
+
 static const char *tile_str[] = { "        ",
 	"   2    ", "   4    ", "   8    ", "   16   ",
 	"   32   ", "   64   ", "  128   ", "  256   ",
@@ -16,15 +23,13 @@ static const char *tile_str[] = { "        ",
 };
 static const char *empty_tile_str = "          ";
 
-static const NCURSES_ATTR_T  tile_attr[] = { COLOR_PAIR(1),       // emtpy tile
+static const NCURSES_ATTR_T  tile_attr[] = {COLOR_PAIR(1),       // emtpy tile
 	COLOR_PAIR(1), COLOR_PAIR(2), COLOR_PAIR(3), COLOR_PAIR(4),// 2 4 8 16
 	COLOR_PAIR(5), COLOR_PAIR(6), COLOR_PAIR(7),               // 32 64 128
-
 	COLOR_PAIR(1) | A_BOLD, COLOR_PAIR(2) | A_BOLD,           // 256  512
 	COLOR_PAIR(3) | A_BOLD, COLOR_PAIR(4) | A_BOLD,           // 1024 2048
 	COLOR_PAIR(5) | A_BOLD, COLOR_PAIR(6) | A_BOLD,           // 4096 8192
 	COLOR_PAIR(7) | A_BOLD,                                   // 16384
-
 	COLOR_PAIR(1) | A_BOLD,                     // 32768
 	COLOR_PAIR(2) | A_BOLD,                     // 65536
 	COLOR_PAIR(3) | A_BOLD,                     // 131072
@@ -64,11 +69,10 @@ int init_win()
 	int stats_win_top    = board_win_top + 1;
 
 	int board_win_left;
-	if (board_win_width + stats_win_width < scr_width) {
+	if (board_win_width + stats_win_width < scr_width)
 		board_win_left = (scr_width - board_win_width - stats_win_width) / 2;
-	} else {
+	else
 		board_win_left = 0;
-	}
 	int stats_win_left   = board_win_left + board_win_width + 1;
 
 
@@ -80,7 +84,6 @@ int init_win()
 	                   board_win_top, board_win_left);
 	wborder(board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
 	        ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-
 
 	stats_win = newwin(stats_win_height, stats_win_width,
 	                   stats_win_top, stats_win_left);
@@ -127,47 +130,34 @@ void print_too_small(void)
 	refresh();
 }
 
-static void draw_tile(int top, int left, int val)
+static void draw_stats(const Stats *stats);
+static void draw_board(const Board *board);
+static void draw_tile(int top, int left, int val);
+
+void draw(const Board *board, const Stats *stats)
 {
-	int right  = left + TILE_WIDTH  - 1;
-	int bottom = top  + TILE_HEIGHT - 1;
-	int center = (top + bottom) / 2;
-
-	/* draw empty tile */
-	if (val == 0) {
-		for (int y = top; y <= bottom; y++)
-			mvwprintw(board_win, y, left, empty_tile_str);
-		return;
+	if (board) {
+		draw_board(board);
+		if (stats && stats->game_over) {
+			wattron(board_win, A_BOLD | COLOR_PAIR(1));
+			mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
+		          	  "GAME OVER");
+			wattroff(board_win, A_BOLD);
+		}
+		wrefresh(board_win);
 	}
-
-	wattrset(board_win, tile_attr[val]);
-
-	/* erase tile except it's board */
-	for (int y = top+1; y < bottom; y++)
-		mvwprintw(board_win, y, left+1, tile_str[0]);
-
-	/* draw corners */
-	mvwaddch(board_win, top,    left,  ACS_ULCORNER);
-	mvwaddch(board_win, top,    right, ACS_URCORNER);
-	mvwaddch(board_win, bottom, left,  ACS_LLCORNER);
-	mvwaddch(board_win, bottom, right, ACS_LRCORNER);
-
-	/* draw lines */
-	mvwhline(board_win, top,    left+1, ACS_HLINE, TILE_WIDTH-2);
-	mvwhline(board_win, bottom, left+1, ACS_HLINE, TILE_WIDTH-2);
-	mvwvline(board_win, top+1, left,  ACS_VLINE, TILE_HEIGHT-2);
-	mvwvline(board_win, top+1, right, ACS_VLINE, TILE_HEIGHT-2);
-
-	/* draw number */
-	mvwprintw(board_win, center, left+1, tile_str[val]);
+	if (stats) {
+		draw_stats(stats);
+		wrefresh(stats_win);
+	}
 }
-
-
 
 static void draw_board(const Board *board)
 {
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
+			if (board->tiles[y][x] == -1)
+				continue;
 			int xc = TILE_WIDTH  * x + 1;
 			int yc = TILE_HEIGHT * y + 1;
 			draw_tile(yc, xc, board->tiles[y][x]);
@@ -208,100 +198,93 @@ static void draw_stats(const Stats *stats)
 	mvwaddch(stats_win, 16, 1, 'Q');
 }
 
-void draw(const Board *board, const Stats *stats)
+
+static void draw_tile(int top, int left, int val)
 {
-	if (board) {
-		draw_board(board);
-		if (stats && stats->game_over) {
-			wattron(board_win, A_BOLD | COLOR_PAIR(1));
-			mvwprintw(board_win, TILE_HEIGHT*2, (TILE_WIDTH*BOARD_SIZE - 8) / 2,
-		          	  "GAME OVER");
-			wattroff(board_win, A_BOLD);
-		}
-		wrefresh(board_win);
+	int right  = left + TILE_WIDTH  - 1;
+	int bottom = top  + TILE_HEIGHT - 1;
+	int center = (top + bottom) / 2;
+
+	/* draw empty tile */
+	if (val == 0) {
+		for (int y = top; y <= bottom; y++)
+			mvwprintw(board_win, y, left, empty_tile_str);
+		return;
 	}
-	if (stats) {
-		draw_stats(stats);
-		wrefresh(stats_win);
-	}
+
+	wattrset(board_win, tile_attr[val]);
+
+	/* erase tile except it's board */
+	for (int y = top+1; y < bottom; y++)
+		mvwprintw(board_win, y, left+1, tile_str[0]);
+
+	/* draw corners */
+	mvwaddch(board_win, top,    left,  ACS_ULCORNER);
+	mvwaddch(board_win, top,    right, ACS_URCORNER);
+	mvwaddch(board_win, bottom, left,  ACS_LLCORNER);
+	mvwaddch(board_win, bottom, right, ACS_LRCORNER);
+
+	/* draw lines */
+	mvwhline(board_win, top,    left+1, ACS_HLINE, TILE_WIDTH-2);
+	mvwhline(board_win, bottom, left+1, ACS_HLINE, TILE_WIDTH-2);
+	mvwvline(board_win, top+1, left,  ACS_VLINE, TILE_HEIGHT-2);
+	mvwvline(board_win, top+1, right, ACS_VLINE, TILE_HEIGHT-2);
+
+	/* draw number */
+	mvwprintw(board_win, center, left+1, tile_str[val]);
 }
 
 
-
-typedef struct { // sliding tile
-	int x, y; // coords
-	int tick; // move every tick
-	int val;  // tile's number
-} tile_t;
-
-/* what tile to draw first?
-   if sliding left, draw sliding tiles from left to right,
-   same for other directions */
-static int sort_left(const void *l, const void *r)
-{
-	return ((tile_t *)l)->x - ((tile_t *)r)->x;
-}
-static int sort_right(const void *l, const void *r)
-{
-	return ((tile_t *)r)->x - ((tile_t *)l)->x;
-}
-static int sort_up(const void *l, const void *r)
-{
-	return ((tile_t *)l)->y - ((tile_t *)r)->y;
-}
-static int sort_down(const void *l, const void *r)
-{
-	return ((tile_t *)r)->y - ((tile_t *)l)->y;
-}
+static int sort_left(const void *l, const void *r);
+static int sort_right(const void *l, const void *r);
+static int sort_up(const void *l, const void *r);
+static int sort_down(const void *l, const void *r);
 
 void draw_slide(Board *board, const Board *moves, Dir dir)
 {
-	tile_t tiles[BOARD_TILES]; // sliding tiles
+	Tile tiles[BOARD_TILES]; /* sliding tiles */
 	int tiles_n = 0;
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
-			if (moves->tiles[y][x]) {
-				tile_t tile;
-				// convert board position to window coords
-				tile.x = x * TILE_WIDTH + 1;
-				tile.y = y * TILE_HEIGHT + 1;
-				tile.val = board->tiles[y][x];
-				tile.tick = 6 / moves->tiles[y][x];
-				// remove sliding tiles from the board
-				board->tiles[y][x] = 0;
-				tiles[tiles_n++] = tile;
-			}
+			if (moves->tiles[y][x] == 0)
+				continue;
+			Tile tile;
+			/* convert board position to window coords */
+			tile.x = x * TILE_WIDTH + 1;
+			tile.y = y * TILE_HEIGHT + 1;
+			tile.val = board->tiles[y][x];
+			tile.tick = 6 / moves->tiles[y][x];
+			/* remove sliding tiles from the board */
+			board->tiles[y][x] = 0;
+			tiles[tiles_n++] = tile;
 		}
 	}
 
 	int (*sort)(const void*, const void*);
-	int mx = 0, my = 0; //coord modifiers
+	int mx = 0, my = 0; /* coord modifiers */
 	switch (dir) {
-		case LEFT:  sort = sort_left;  mx = -2; break;
-		case RIGHT: sort = sort_right; mx =  2; break;
-		case UP:    sort = sort_up;    my = -1; break;
-		case DOWN:  sort = sort_down;  my =  1; break;
-		default :   exit(1); break;
+	case LEFT:  sort = sort_left;  mx = -2; break;
+	case RIGHT: sort = sort_right; mx =  2; break;
+	case UP:    sort = sort_up;    my = -1; break;
+	case DOWN:  sort = sort_down;  my =  1; break;
+	default :   exit(1); break;
 	}
-	//sort sliding tiles according to direction
-	qsort(tiles, tiles_n, sizeof(tile_t), sort);
+	/* sort sliding tiles according to direction */
+	qsort(tiles, tiles_n, sizeof(Tile), sort);
 
 	nanosleep(&tick_time, NULL);
 	/* sliding continues for 30 ticks,
 	   a tile can move every 1, 2 or 3 ticks */
 	for (int tick = 1; tick <= 30; tick++) {
 		for (int t = 0; t < tiles_n; t++) {
-			//time to move the tile
-			if (tick % tiles[t].tick == 0) {
-				tiles[t].x += mx;
-				tiles[t].y += my;
-			}
-		}
-		draw_board(board); // draw static tiles
-		for (int t = 0; t < tiles_n; t++) { // draw moving tiles
-			draw_tile(tiles[t].y,
-			          tiles[t].x, tiles[t].val);
+			if (tick % tiles[t].tick != 0)
+				continue;
+			/* move tile */
+			draw_tile(tiles[t].y, tiles[t].x, 0);
+			tiles[t].x += mx;
+			tiles[t].y += my;
+			draw_tile(tiles[t].y, tiles[t].x, tiles[t].val);
 		}
 		wrefresh(board_win);
 		nanosleep(&tick_time, NULL);
@@ -309,3 +292,24 @@ void draw_slide(Board *board, const Board *moves, Dir dir)
 	nanosleep(&end_move_time, NULL);
 }
 
+	
+
+/* what tile to draw first?
+   if sliding left, draw sliding tiles from left to right,
+   same for other directions */
+static int sort_left(const void *l, const void *r)
+{
+	return ((Tile *)l)->x - ((Tile *)r)->x;
+}
+static int sort_right(const void *l, const void *r)
+{
+	return ((Tile *)r)->x - ((Tile *)l)->x;
+}
+static int sort_up(const void *l, const void *r)
+{
+	return ((Tile *)l)->y - ((Tile *)r)->y;
+}
+static int sort_down(const void *l, const void *r)
+{
+	return ((Tile *)r)->y - ((Tile *)l)->y;
+}
