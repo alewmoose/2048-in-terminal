@@ -63,14 +63,14 @@ int main(void)
 
 	int ch;
 	while ((ch = getch()) != 'q' && ch != 'Q' && ch != ESC_KEY) {
-		sigprocmask(SIG_BLOCK, &all_signals, NULL);
-		/* if terminal's too small do nothing
-		   until it's restored */
-		if (terminal_too_small && ch != KEY_RESIZE)
-			goto next;
 		Dir dir;
 		Board new_board;
 		Board moves;
+
+		sigprocmask(SIG_BLOCK, &all_signals, NULL);
+
+		if (terminal_too_small && ch != KEY_RESIZE)
+			goto next;
 
 		switch(ch) {
 		case KEY_UP:    dir = UP;    break;
@@ -84,7 +84,6 @@ int main(void)
 			stats.game_over = false;
 			board_start(&board);
 			draw(&board, &stats);
-			//sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 			goto next;
 
 		/* terminal resize */
@@ -104,11 +103,10 @@ int main(void)
 		if (stats.game_over)
 			goto next;
 
-
 		stats.points = board_slide(&board, &new_board, &moves, dir);
 
 		if (stats.points >= 0) {
-			draw(NULL, &stats);
+			draw(NULL, &stats); /* show +points */
 			draw_slide(&board, &moves, dir);
 
 			board = new_board;

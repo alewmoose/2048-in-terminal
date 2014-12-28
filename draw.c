@@ -6,11 +6,11 @@
 #include <stdbool.h>
 #include "draw.h"
 
-
+/* sliding tile */
 typedef struct tile {
 	int x, y;
-	int mx, my;
-	int val;
+	int mx, my; /* coord modifiers */
+	int val;    /* tile's value, power of two */
 } Tile;
 
 
@@ -81,15 +81,15 @@ int init_win()
 	}
 
 	board_win = newwin(bheight, bwidth, btop, bleft);
-	wattrset(board_win, COLOR_PAIR(1));
-	wborder(board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-	        ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-
 	stats_win = newwin(sheight, swidth, stop, sleft);
 	if (!board_win || !stats_win) {
 		endwin();
 		exit(1);
 	}
+	wattrset(board_win, COLOR_PAIR(1));
+	wborder(board_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
+	        ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+
 	return WIN_OK;
 }
 
@@ -130,6 +130,7 @@ void print_too_small(void)
 
 static void draw_stats(const Stats *stats);
 static void draw_board(const Board *board);
+/* 'top' and 'left' are window coords of upper-left tile's corner */
 static void draw_tile(int top, int left, int val);
 
 void draw(const Board *board, const Stats *stats)
@@ -155,8 +156,7 @@ static void draw_board(const Board *board)
 {
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
-			if (board->tiles[y][x] == -1)
-				continue;
+			/* convert board position to window coords */
 			int xc = TILE_WIDTH  * x + 1;
 			int yc = TILE_HEIGHT * y + 1;
 			draw_tile(yc, xc, board->tiles[y][x]);
@@ -213,7 +213,7 @@ static void draw_tile(int top, int left, int val)
 
 	wattrset(board_win, tile_attr[val]);
 
-	/* erase tile except it's board */
+	/* erase tile except it's border */
 	for (int y = top+1; y < bottom; y++)
 		mvwprintw(board_win, y, left+1, tile_str[0]);
 
@@ -233,13 +233,13 @@ static void draw_tile(int top, int left, int val)
 	mvwprintw(board_win, center, left+1, tile_str[val]);
 }
 
-
+/* Passed to qsort */
 static int sort_left(const void *l, const void *r);
 static int sort_right(const void *l, const void *r);
 static int sort_up(const void *l, const void *r);
 static int sort_down(const void *l, const void *r);
 
-void draw_slide(Board *board, const Board *moves, Dir dir)
+void draw_slide(const Board *board, const Board *moves, Dir dir)
 {
 	Tile tiles[BOARD_TILES]; /* sliding tiles */
 	int tiles_n = 0;
@@ -291,9 +291,6 @@ void draw_slide(Board *board, const Board *moves, Dir dir)
 }
 
 
-/* what tile to draw first?
-   if sliding left, draw sliding tiles from left to right,
-   same for other directions */
 static int sort_left(const void *l, const void *r)
 {
 	return ((Tile *)l)->x - ((Tile *)r)->x;
