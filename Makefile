@@ -1,27 +1,25 @@
-CFLAGS=-Wall -Wextra -Wpedantic -std=c99 -g -O2
+TARGET:= 2048
+SRC:= $(wildcard *.c)
+OBJ:= $(SRC:.c=.o)
+DESTDIR:= /usr/local
+CFLAGS+= -Wall -Wextra -Wpedantic -std=c99 -O2 -g
+LDFLAGS+= -lncurses
 
 .PHONY: all install clean
 
-all: 2048
+all: $(TARGET)
 
-2048: game.o board.o draw.o save.o
-	cc game.o board.o draw.o save.o -o 2048 $(CFLAGS) -lncurses
+2048: $(OBJ)
+	$(CC) $(OBJ) -o $(TARGET) $(CFLAGS) $(LDFLAGS)
 
-
-game.o: game.c board.h draw.h common.h
-	cc -c game.c $(CFLAGS)
-
-board.o: board.c board.h common.h
-	cc -c board.c $(CFLAGS)
-
-draw.o: draw.c draw.h common.h
-
-save.o: save.c save.h common.h
-	cc -c save.c $(CFLAGS)
 
 install:
-	cp 2048 /usr/local/bin
+	@- install -m 755 $(TARGET) $(DESTDIR)/bin
 
 clean:
-	rm -f 2048 *.o
+	@-rm -f $(TARGET) $(OBJ)
 
+game.o: board.h draw.h save.h common.h
+board.o: board.h common.h
+draw.o: draw.h common.h
+save.o: save.h common.h
