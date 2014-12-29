@@ -24,7 +24,7 @@ void print_too_small(void);
 void draw(const Board *board, const Stats *stats);
 
 /* Draw sliding animation. 'moves' must hold distance (positive int) for
- * each sliding tile and 0 for static tiles */
+ * each sliding tile and 0 for static and empty tiles */
 void draw_slide(const Board *board, const Board *moves, Dir dir);
 
 
