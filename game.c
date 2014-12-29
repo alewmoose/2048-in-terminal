@@ -123,9 +123,9 @@ int main(void)
 			stats.game_over = true;
 			draw(&board, &stats);
 		}
+		flushinp();
 	next:
 		sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
-		flushinp();
 	}
 	/* block all signals before saving */
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
