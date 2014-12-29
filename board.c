@@ -53,7 +53,7 @@ static void rotate_r(Board *board);
 static void rotate_2(Board *board);
 static int  slide_left(Board *board, Board *moves);
 
-/* returns points or NO_SLIDE if didn't slide, stores moves for animation */
+
 int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
 {
 	*new_board = *board;
@@ -68,7 +68,7 @@ int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
 
 	int points = slide_left(new_board, moves);
 	if (points == NO_SLIDE)
-		goto noslide;
+		return NO_SLIDE;
 
 	/* rotate back */
 	switch (dir) {
@@ -86,7 +86,7 @@ int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
 		break;
 	case LEFT: break;
 	}
-noslide:
+	
 	return points;
 }
 bool board_can_slide(const Board *board)
