@@ -279,9 +279,12 @@ void draw_slide(const Board *board, const Board *moves, Dir dir)
 	nanosleep(&tick_time, NULL);
 	for (int tick = 1; tick <= 5; tick++) {
 		for (int t = 0; t < tiles_n; t++) {
+			/* erase */
 			draw_tile(tiles[t].y, tiles[t].x, 0);
+			/* move */
 			tiles[t].x += tiles[t].mx;
 			tiles[t].y += tiles[t].my;
+			/* redraw */
 			draw_tile(tiles[t].y, tiles[t].x, tiles[t].val);
 		}
 		wrefresh(board_win);
