@@ -65,12 +65,24 @@ int save_game(const Board *board, const Stats *stats)
 	off = lseek(fd, 0, SEEK_SET);
 	if (off == -1)
 		return -1;
-	write(fd, &stats->score,     sizeof(int));
-	write(fd, &stats->max_score, sizeof(int));
-	write(fd, board,      sizeof(Board));
+
+	ssize_t s;
+	s = write(fd, &stats->score,     sizeof(int));
+	if (s != sizeof(int))
+			goto err;
+
+	s = write(fd, &stats->max_score, sizeof(int));
+	if (s != sizeof(int))
+			goto err;
+
+	s = write(fd, board, sizeof(Board));
+	if (s != sizeof(int))
+			goto err;
+
 	/* game is saved only once, close the file */
+err:
 	close(fd);
-	return 0;
+	return s == -1 ? s : 0;
 }
 
 static int get_filename(void)
