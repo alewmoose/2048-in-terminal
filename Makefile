@@ -1,20 +1,21 @@
-TARGET:= 2048
-SRC:= $(wildcard *.c)
-OBJ:= $(SRC:.c=.o)
-DESTDIR:= /usr/local
-CFLAGS+= -Wall -Wextra -Wpedantic -std=c99 -O2 -g
-LDFLAGS+= -lncurses
+TARGET= 2048
+SRC= $(wildcard *.c)
+OBJ= $(SRC:.c=.o)
+CC?= gcc
+CFLAGS= -Wall -Wextra -Wpedantic -g -std=c99 -O2 -march=native
+LDLIBS= -lncurses
+DESTDIR= /usr/local
 
 .PHONY: all install clean
 
 all: $(TARGET)
 
-2048: $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET) $(CFLAGS) $(LDFLAGS)
+$(TARGET): $(OBJ)
+	$(CC) $(OBJ) -o $(TARGET) $(LDLIBS) 
 
 
 install:
-	@- install -m 755 $(TARGET) $(DESTDIR)/bin
+	@-install -m 755 $(TARGET) $(DESTDIR)/bin
 
 clean:
 	@-rm -f $(TARGET) $(OBJ)
