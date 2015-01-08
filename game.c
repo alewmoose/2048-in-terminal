@@ -9,15 +9,15 @@
 #include "board.h"
 #include "save.h"
 
-#define ESC_KEY 27
-
 static sigset_t all_signals;
 static Board board;
 static Stats stats = {.auto_save = false, .game_over = false};
 
+
 static void sig_handler(int __attribute__((unused))sig_no)
 {
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
+
 	save_game(&board, &stats);
 	endwin();
 	exit(0);
@@ -38,6 +38,8 @@ int main(void)
 	srand(time(NULL));
 
 	sigfillset(&all_signals);
+	sigdelset(&all_signals, SIGSTOP);
+	sigdelset(&all_signals, SIGCONT);
 	signal(SIGINT,  sig_handler);
 	signal(SIGABRT, sig_handler);
 	signal(SIGTERM, sig_handler);
@@ -62,7 +64,7 @@ int main(void)
 	sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 
 	int ch;
-	while ((ch = getch()) != 'q' && ch != 'Q' && ch != ESC_KEY) {
+	while ((ch = getch()) != 'q' && ch != 'Q') {
 		Dir dir;
 		Board new_board;
 		Board moves;
@@ -127,6 +129,7 @@ int main(void)
 	next:
 		sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
 	}
+
 	/* block all signals before saving */
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 	endwin();
