@@ -6,6 +6,7 @@
 #include <sys/file.h>
 #include "save.h"
 
+
 #define PATH_LEN 256
 
 #define MAX_POSSIBLE_SCORE  3932156
@@ -23,11 +24,11 @@ int load_game(Board *board, Stats *stats)
 	stats->auto_save = false;
 
 	if (get_filename() == -1)
-		goto open_failed;
+		return -1;
 
 	fd = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1)
-		goto open_failed;
+		return -1;
 
 	if (flock(fd, LOCK_EX | LOCK_NB) != -1)
 		stats->auto_save = true;
@@ -51,8 +52,8 @@ int load_game(Board *board, Stats *stats)
 	return 0;
 
 read_failed:
-	close(fd);
-open_failed:
+	if (!stats->auto_save)
+		close(fd);
 	return -1;
 }
 
@@ -76,13 +77,13 @@ int save_game(const Board *board, const Stats *stats)
 			goto err;
 
 	s = write(fd, board, sizeof(Board));
-	if (s != sizeof(int))
+	if (s != sizeof(Board))
 			goto err;
 
 	/* game is saved only once, close the file */
 err:
 	close(fd);
-	return s == -1 ? s : 0;
+	return s == -1 ? -1 : 0;
 }
 
 static int get_filename(void)
