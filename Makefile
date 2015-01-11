@@ -2,7 +2,7 @@ TARGET= 2048
 SRC= $(wildcard *.c)
 OBJ= $(SRC:.c=.o)
 CC?= gcc
-CFLAGS= -Wall -Wextra -Wpedantic -g -std=c99 -O2 -march=native
+CFLAGS= -Wall -Wextra -pedantic -g -std=c99 -O2 -march=native
 LDLIBS= -lncurses
 DESTDIR= /usr/local
 
