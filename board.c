@@ -26,8 +26,8 @@ void board_add_tile(Board *board, bool only2)
 	if (only2) {
 		val = 1;
 	} else {
-		/* 12.5% chance of getting '4' */
-		val = (rand() % 8 == 1) ? 2 : 1;
+		/* 10% chance of getting '4' */
+		val = (rand() % 10 == 1) ? 2 : 1;
 	}
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
