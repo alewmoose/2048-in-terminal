@@ -38,7 +38,9 @@ int main(void)
 	srand(time(NULL));
 
 	sigfillset(&all_signals);
+	sigdelset(&all_signals, SIGKILL);
 	sigdelset(&all_signals, SIGSTOP);
+	sigdelset(&all_signals, SIGTSTP);
 	sigdelset(&all_signals, SIGCONT);
 	signal(SIGINT,  sig_handler);
 	signal(SIGABRT, sig_handler);
