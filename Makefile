@@ -11,7 +11,7 @@ DESTDIR= /usr/local
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET) $(LDLIBS) 
+	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET) $(LDLIBS)
 
 
 install:
