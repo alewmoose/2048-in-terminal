@@ -20,7 +20,7 @@ install:
 clean:
 	@-rm -f $(TARGET) $(OBJ)
 
-game.o: board.h draw.h save.h common.h
+main.o: board.h draw.h save.h common.h
 board.o: board.h common.h
 draw.o: draw.h common.h
 save.o: save.h common.h
