@@ -135,6 +135,12 @@ int main(void)
 	/* block all signals before saving */
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
 	endwin();
+
+	if (stats.game_over) {
+		board_start(&board);
+		stats.score = 0;
+	}
+
 	save_game(&board, &stats);
 	return 0;
 }
