@@ -1,6 +1,4 @@
 *.o
 2048
-*.swp
-TODO
-log
+*.sw[po]
 tags
