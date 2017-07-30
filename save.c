@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include "common.h"
 #include "save.h"
 
 
@@ -104,8 +105,8 @@ static bool sane(Board *board, Stats *stats)
 	    stats->score > stats->max_score)
 	    	return false;
 
-	for (int y = 0; y < 4; y++) {
-		for (int x = 0; x < 4; x++) {
+	for (int y = 0; y < BOARD_SIZE; y++) {
+		for (int x = 0; x < BOARD_SIZE; x++) {
 			int tile = board->tiles[y][x];
 			if (tile > MAX_POSSIBLE_TILE || tile < 0)
 				return false;
