@@ -27,5 +27,4 @@ void draw(const Board *board, const Stats *stats);
  * each sliding tile and 0 for static and empty tiles */
 void draw_slide(const Board *board, const Board *moves, Dir dir);
 
-
 #endif

@@ -65,20 +65,19 @@ int init_win()
 	int scr_width, scr_height;
 	getmaxyx(stdscr, scr_height, scr_width);
 
-	int btop    = (scr_height - bheight) / 2;
-	int stop    = btop + 1;
+	int btop = (scr_height - bheight) / 2;
+	int stop = btop + 1;
 
 	int bleft;
 	if (bwidth + swidth < scr_width)
 		bleft = (scr_width - bwidth - swidth) / 2;
 	else
 		bleft = 0;
-	int sleft   = bleft + bwidth + 1;
+	int sleft = bleft + bwidth + 1;
 
 
-	if (bheight > scr_height || bwidth > scr_width) {
+	if (bheight > scr_height || bwidth > scr_width)
 		return WIN_TOO_SMALL;
-	}
 
 	board_win = newwin(bheight, bwidth, btop, bleft);
 	stats_win = newwin(sheight, swidth, stop, sleft);

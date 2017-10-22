@@ -17,7 +17,6 @@ static Stats stats = {.auto_save = false, .game_over = false};
 static void sig_handler(int __attribute__((unused))sig_no)
 {
 	sigprocmask(SIG_BLOCK, &all_signals, NULL);
-
 	save_game(&board, &stats);
 	endwin();
 	exit(0);
@@ -26,8 +25,10 @@ static void sig_handler(int __attribute__((unused))sig_no)
 
 int main(void)
 {
-	const struct timespec addtile_time = {.tv_sec = 0,
-	                                      .tv_nsec = 100000000};
+	const struct timespec addtile_time = {
+		.tv_sec = 0,
+		.tv_nsec = 100000000
+	};
 	bool terminal_too_small;
 
 	if (!isatty(fileno(stdout)) ||

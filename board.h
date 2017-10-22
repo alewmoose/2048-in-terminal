@@ -14,7 +14,7 @@ void board_add_tile(Board *board, bool only2);
 
 /* Returns points, sets 'new_board' and 'moves'(needed for animation).
  * Returns NO_SLIDE if didn't slide */
-int  board_slide    (const Board *board, Board *new_board, Board *moves,  Dir dir);
+int  board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir);
 
 bool board_can_slide(const Board *board);
 

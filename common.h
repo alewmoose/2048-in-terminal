@@ -24,5 +24,4 @@ typedef struct coord {
 
 typedef enum dir {UP, DOWN, LEFT, RIGHT} Dir;
 
-
 #endif

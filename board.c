@@ -145,7 +145,7 @@ static int slide_left(Board *board, Board *moves)
 			if (row[x] == 0) {
 				int next = next_any(row, x + 1);
 				if (next == -1)
-					goto next_row;
+					goto NEXT_ROW;
 
 				/* found an empty spot, move next tile here */
 				slided = true;
@@ -166,7 +166,7 @@ static int slide_left(Board *board, Board *moves)
 				moves->tiles[y][next] = next - x;
 			}
 		}
-	next_row: ;
+	NEXT_ROW: ;
 	}
 
 	return slided ? points : NO_SLIDE;
