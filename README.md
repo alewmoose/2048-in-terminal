@@ -4,9 +4,9 @@
 
 ## Build and install
 
-make
+`make`
 
-sudo make install
+`sudo make install`
 
 
 ## The original game:
