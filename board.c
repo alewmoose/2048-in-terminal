@@ -86,7 +86,7 @@ int board_slide(const Board *board, Board *new_board, Board *moves,  Dir dir)
 		break;
 	case LEFT: break;
 	}
-	
+
 	return points;
 }
 bool board_can_slide(const Board *board)

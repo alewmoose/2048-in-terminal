@@ -94,7 +94,7 @@ static int get_filename(void)
 		return -1;
 
 	strcpy(filename, home);
-	strcat(filename, "/.2048"); 
+	strcat(filename, "/.2048");
 	return 0;
 }
 
@@ -103,7 +103,7 @@ static bool sane(Board *board, Stats *stats)
 	if (stats->score < 0 || stats->max_score < 0 ||
 	    stats->max_score > MAX_POSSIBLE_SCORE ||
 	    stats->score > stats->max_score)
-	    	return false;
+		return false;
 
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
