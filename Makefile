@@ -7,7 +7,7 @@ LDLIBS=-lncurses
 PREFIX=/usr/local
 BINDIR=$(PREFIX)/bin
 
-.PHONY: all install clean
+.PHONY: all clean install uninstall
 
 all: $(EXE)
 
@@ -29,8 +29,11 @@ $(EXE): $(OBJ)
 include $(DEP)
 
 
+clean:
+	@-rm -f $(EXE) $(OBJ) $(DEP)
+
 install:
 	@-install -m 755 $(EXE) $(BINDIR)
 
-clean:
-	@-rm -f $(EXE) $(OBJ) $(DEP)
+uninstall:
+	@-rm -f $(BINDIR)/$(EXE)
