@@ -1,4 +1,4 @@
-TARGET=2048
+EXE=2048-in-terminal
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
 DEP=$(SRC:.c=.d)
@@ -8,9 +8,9 @@ DESTDIR=/usr/local/bin
 
 .PHONY: all install clean
 
-all: $(TARGET)
+all: $(EXE)
 
-$(TARGET): $(OBJ)
+$(EXE): $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
 
 
@@ -29,7 +29,7 @@ include $(DEP)
 
 
 install:
-	@-install -m 755 $(TARGET) $(DESTDIR)
+	@-install -m 755 $(EXE) $(DESTDIR)
 
 clean:
-	@-rm -f $(TARGET) $(OBJ) $(DEP)
+	@-rm -f $(EXE) $(OBJ) $(DEP)
