@@ -4,7 +4,8 @@ OBJ=$(SRC:.c=.o)
 DEP=$(SRC:.c=.d)
 CFLAGS=-Wall -Wextra -pedantic -g -std=c99 -O2 -march=native
 LDLIBS=-lncurses
-DESTDIR=/usr/local/bin
+PREFIX=/usr/local
+BINDIR=$(PREFIX)/bin
 
 .PHONY: all install clean
 
@@ -29,7 +30,7 @@ include $(DEP)
 
 
 install:
-	@-install -m 755 $(EXE) $(DESTDIR)
+	@-install -m 755 $(EXE) $(BINDIR)
 
 clean:
 	@-rm -f $(EXE) $(OBJ) $(DEP)
