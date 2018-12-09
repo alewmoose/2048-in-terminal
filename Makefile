@@ -2,7 +2,6 @@ TARGET=2048
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
 DEP=$(SRC:.c=.d)
-CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -g -std=c99 -O2 -march=native
 LDLIBS=-lncurses
 DESTDIR=/usr/local/bin
