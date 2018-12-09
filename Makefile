@@ -1,26 +1,36 @@
-TARGET?=2048
+TARGET=2048
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
-CC?=gcc
-CFLAGS?=-Wall -Wextra -pedantic -g -std=c99 -O2 -march=native
+DEP=$(SRC:.c=.d)
+CC=gcc
+CFLAGS=-Wall -Wextra -pedantic -g -std=c99 -O2 -march=native
 LDLIBS=-lncurses
-DESTDIR?=/usr/local/bin
+DESTDIR=/usr/local/bin
 
 .PHONY: all install clean
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET) $(LDLIBS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
+
+
+%.o : %.c
+
+%.o: %.c %.d
+	$(CC) -c $(CFLAGS) $< -o $@
+
+%.d: %.c
+	$(CC) -MM $< > $@
+
+
+.PRECIOUS: $(DEP)
+
+include $(DEP)
 
 
 install:
 	@-install -m 755 $(TARGET) $(DESTDIR)
 
 clean:
-	@-rm -f $(TARGET) $(OBJ)
-
-main.o: board.h draw.h save.h common.h
-board.o: board.h common.h
-draw.o: draw.h common.h
-save.o: save.h common.h
+	@-rm -f $(TARGET) $(OBJ) $(DEP)
