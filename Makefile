@@ -16,7 +16,7 @@ $(EXE): $(OBJ)
 
 %.o : %.c
 
-%.o: %.c
+%.o: %.c %.d
 	$(CC) -MM $< > $*.d
 	$(CC) -c $(CFLAGS) $< -o $@
 

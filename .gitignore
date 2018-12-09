@@ -1,6 +1,7 @@
 *.o
 *.d
 2048
+2048-in-terminal
 *.sw[po]
 tags
 TODO
