@@ -14,17 +14,13 @@ all: $(EXE)
 $(EXE): $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
 
-
 %.o : %.c
 
-%.o: %.c %.d
+%.o: %.c
+	$(CC) -MM $< > $*.d
 	$(CC) -c $(CFLAGS) $< -o $@
 
-%.d: %.c
-	$(CC) -MM $< > $@
-
-
-.PRECIOUS: $(DEP)
+%.d: ;
 
 include $(DEP)
 
