@@ -38,7 +38,7 @@ include $(DEP)
 clean:
 	@-rm -f $(BUILDDIR)/*
 
-install:
+install: $(TARGET)
 	@-install -m 755 $(TARGET) $(BINDIR)
 
 uninstall:
