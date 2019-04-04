@@ -9,7 +9,7 @@ SRC=$(wildcard $(SRCDIR)/*.c)
 OBJ=$(SRC:$(SRCDIR)/%.c=$(BUILDDIR)/%.o)
 DEP=$(SRC:$(SRCDIR)/%.c=$(BUILDDIR)/%.d)
 
-CFLAGS=-Wall -Wextra -pedantic -std=c11 -O2 -march=native
+CFLAGS=-Wall -Wextra -pedantic -std=c11 -O2 -march=native -D_GNU_SOURCE
 LDLIBS=-lncurses
 
 PREFIX=/usr/local

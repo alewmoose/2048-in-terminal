@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
