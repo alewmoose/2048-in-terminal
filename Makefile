@@ -2,7 +2,7 @@ EXE=2048-in-terminal
 TARGET=$(BUILDDIR)/$(EXE)
 
 SRCDIR=src
-BUILDDIR=build
+BUILDDIR=_build
 $(shell mkdir -p $(BUILDDIR))
 
 SRC=$(wildcard $(SRCDIR)/*.c)
@@ -36,7 +36,7 @@ include $(DEP)
 
 
 clean:
-	@-rm -f $(BUILDDIR)/*
+	@-rm -r $(BUILDDIR)
 
 install: $(TARGET)
 	@-install -m 755 $(TARGET) $(BINDIR)
