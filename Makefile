@@ -32,7 +32,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.c $(BUILDDIR)/%.d
 
 %.d: ;
 
-include $(DEP)
+-include $(DEP)
 
 
 clean:
