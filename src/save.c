@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <fcntl.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <sys/file.h>
 #include "common.h"
 #include "save.h"
