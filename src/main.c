@@ -28,6 +28,7 @@ int main(void)
 		.tv_sec = 0,
 		.tv_nsec = 100000000
 	};
+	bool show_animations = 1;
 	bool terminal_too_small;
 
 	if (!isatty(fileno(stdout)) ||
@@ -89,6 +90,11 @@ int main(void)
 			board_start(&board);
 			draw(&board, &stats);
 			goto next;
+		
+		/* toggle animations */
+		case 'a': case 'A':
+			show_animations = !show_animations;
+			goto next;
 
 		/* terminal resize */
 		case KEY_RESIZE:
@@ -111,7 +117,8 @@ int main(void)
 
 		if (stats.points >= 0) {
 			draw(NULL, &stats); /* show +points */
-			draw_slide(&board, &moves, dir);
+			if (show_animations)
+				draw_slide(&board, &moves, dir);
 
 			board = new_board;
 			stats.score += stats.points;
