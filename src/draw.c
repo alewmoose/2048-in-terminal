@@ -185,8 +185,12 @@ static void draw_stats(const Stats *stats)
 	wattron(stats_win, COLOR_PAIR(1));
 	mvwprintw(stats_win, 2, 1, "%8d", stats->score);
 	mvwprintw(stats_win, 5, 1, "%8d", stats->max_score);
+	mvwprintw(stats_win, 14, 2, "nimations");
 	mvwprintw(stats_win, 15, 2, "estart");
 	mvwprintw(stats_win, 16, 2, "uit");
+
+	wattron(stats_win, COLOR_PAIR(5));
+	mvwaddch(stats_win, 14, 1, 'A');
 
 	wattron(stats_win, COLOR_PAIR(3));
 	mvwaddch(stats_win, 15, 1, 'R');
