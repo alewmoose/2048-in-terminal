@@ -122,7 +122,7 @@ void print_too_small(void)
 	int x = (width - mlen) / 2;
 	x = x >= 0 ? x : 0;
 	int y = height / 2;
-	mvprintw(y, x, msg);
+	mvprintw(y, x, "%s", msg);
 	refresh();
 }
 
@@ -209,7 +209,7 @@ static void draw_tile(int top, int left, int val)
 	/* draw empty tile */
 	if (val == 0) {
 		for (int y = top; y <= bottom; y++)
-			mvwprintw(board_win, y, left, empty_tile_str);
+			mvwprintw(board_win, y, left, "%s", empty_tile_str);
 		return;
 	}
 
@@ -217,7 +217,7 @@ static void draw_tile(int top, int left, int val)
 
 	/* erase tile except it's border */
 	for (int y = top+1; y < bottom; y++)
-		mvwprintw(board_win, y, left+1, tile_str[0]);
+		mvwprintw(board_win, y, left+1, "%s", tile_str[0]);
 
 	/* draw corners */
 	mvwaddch(board_win, top,    left,  ACS_ULCORNER);
@@ -232,7 +232,7 @@ static void draw_tile(int top, int left, int val)
 	mvwvline(board_win, top+1, right, ACS_VLINE, TILE_HEIGHT-2);
 
 	/* draw number */
-	mvwprintw(board_win, center, left+1, tile_str[val]);
+	mvwprintw(board_win, center, left+1, "%s", tile_str[val]);
 }
 
 /* Passed to qsort */
