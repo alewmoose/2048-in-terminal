@@ -78,10 +78,10 @@ int main(void)
 			goto next;
 
 		switch(ch) {
-		case KEY_UP:    dir = UP;    break;
-		case KEY_DOWN:  dir = DOWN;  break;
-		case KEY_LEFT:  dir = LEFT;  break;
-		case KEY_RIGHT: dir = RIGHT; break;
+		case KEY_UP: case 'k': case 'K':    dir = UP;    break;
+		case KEY_DOWN: case 'j': case 'J':  dir = DOWN;  break;
+		case KEY_LEFT: case 'h': case 'H':  dir = LEFT;  break;
+		case KEY_RIGHT: case 'l': case 'L': dir = RIGHT; break;
 
 		/* restart */
 		case 'r': case 'R':
