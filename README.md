@@ -41,3 +41,6 @@ Alter the `PREFIX` parameter to install to `<PREFIX>/bin`, e.g.:
 
 Run `make uninstall`. Specify `PREFIX` if you did so during installation.
 
+## Note
+
+Testing git
